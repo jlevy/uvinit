@@ -1,12 +1,12 @@
 # ---- Project Info and Dependencies ----
 
 [project.urls]
-Repository = "https://github.com/jlevy/uvproject"
+Repository = "https://github.com/jlevy/uvinit"
 # Homepage = "https://..."
 # Documentation = "https://..."
 
 [project]
-name = "uvproject"
+name = "uvinit"
 description = "A time-saving CLI to start a new Python project with uv"
 authors = [
     { name="jlevy", email="joshua@cal.berkeley.edu" },
@@ -39,6 +39,10 @@ classifiers = [
 # ---- Main dependencies ----
 
 dependencies = [
+    "copier>=9.6.0",
+    "prettyfmt>=0.2.1",
+    "rich>=14.0.0",
+    "rich-argparse>=1.7.0",
 ]
 
 
@@ -56,7 +60,7 @@ dev = [
 
 [project.scripts]
 # Add script entry points here.
-uvproject = "uvproject:main"
+uvinit = "uvinit:main"
 
 
 # ---- Build system ----
@@ -81,7 +85,7 @@ bump = "true"
 
 [tool.hatch.build.targets.wheel]
 # The source location for the package.
-packages = ["src/uvproject"]
+packages = ["src/uvinit"]
 
 
 # ---- Settings ----
@@ -142,8 +146,8 @@ reportUnusedCallResult = false
 # reportMissingImports = false
 # reportUnnecessaryIsInstance = false
 # reportUnreachable = false
-# reportAny = false
-# reportExplicitAny = false
+reportAny = false
+reportExplicitAny = false
 # reportUnknownVariableType = false
 # reportUnknownArgumentType = false
 

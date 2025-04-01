@@ -1,48 +1,55 @@
-# uvproject
+# uvinit
 
-👉\[\[\[**This is the initial readme for your
-[simple-modern-uv](https://github.com/jlevy/simple-modern-uv) template.** Fill it in and
-delete this message!
-Below are general setup instructions that you may remove or keep and adapt for your
-project.\]\]\]
+[![Documentation](https://img.shields.io/badge/documentation-go)](https://www.github.com/jlevy/simple-modern-uv)
+[![image](https://img.shields.io/pypi/pyversions/uvinit.svg)](https://pypi.python.org/pypi/uvinit)
+[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
+[![Copier](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/copier-org/copier/master/img/badge/badge-grayscale-border.json)](https://github.com/copier-org/copier)
+[![X (formerly Twitter)
+Follow](https://img.shields.io/twitter/follow/ojoshe)](https://x.com/ojoshe)
 
-* * *
+## Usage
 
-## Installing uv and Python
+Two words:
 
-This project is set up to use [**uv**](https://docs.astral.sh/uv/), the new package
-manager for Python. `uv` replaces traditional use of `pyenv`, `pipx`, `poetry`, `pip`,
-etc. This is a quick cheat sheet on that:
+**uvx uvinit**
 
-On macOS or Linux, if you don't have `uv` installed, a quick way to install it:
+It will guide you!
 
-```shell
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
+## What is uvinit?
 
-For macOS, you prefer [brew](https://brew.sh/) you can install or upgrade uv with:
+A time-saving CLI tool to quickly start new Python projects with
+[**uv**](https://github.com/astral-sh/uv) using the
+[**simple-modern-uv**](https://github.com/jlevy/simple-modern-uv) template and
+[**copier**]
 
-```shell
-brew update
-brew install uv
-```
+It is tiny and sets up **uv**, **ruff** linting and formatting, **GitHub Actions**,
+**publishing to PyPI**, **type checking**, and more.
 
-See [uv's docs](https://docs.astral.sh/uv/getting-started/installation/) for more
-installation methods and platforms.
+## What Project Template Does it Use?
 
-Now you can use uv to install a current Python environment:
+See [simple-modern-uv](https://github.com/jlevy/simple-modern-uv) for full docs!
 
-```shell
-uv python install 3.13 # Or pick another version.
-```
+If you have another copier-format template you want to use, however, you can specify it
+with the `--template` argument.
 
-## Development Workflows
+## By Chance Is There a Short URL I Can Remember for This Handy Tool?
 
-For development workflows, see [development.md](development.md).
+Funny you should ask!
 
-For instructions on publishing to PyPI, see [publishing.md](publishing.md).
+Type [**git.new/uvinit**](https://git.new/uvinit) into your browser.
+
+Tell your friends!
 
 * * *
 
-*This project was built from
+<div align="center">
+
+<img width="600" alt="Step 1 of 3"
+src="https://github.com/user-attachments/assets/216d3db0-de98-4131-be1d-dce38e926474" />
+
+</div>
+
+* * *
+
+*This project was (of course) built using
 [simple-modern-uv](https://github.com/jlevy/simple-modern-uv).*
