@@ -148,6 +148,7 @@ reportUnusedCallResult = false
 # reportUnreachable = false
 reportAny = false
 reportExplicitAny = false
+reportImplicitStringConcatenation = false
 # reportUnknownVariableType = false
 # reportUnknownArgumentType = false
 

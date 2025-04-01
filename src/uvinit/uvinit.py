@@ -2,11 +2,15 @@
 Welcome to uvinit!
 
 This is a fast way to have Python project template that is ready to use,
-using uv. It's just a wrapper around `copier` (a modern templating tool)
-to make the whole process easy to run as `uvx uvinit`.
+using [uv](https://docs.astral.sh/uv/), the modern Python package manager.
 
-This tool automates setting up new Python projects using copier and the
-`simple-modern-uv` template, which aims to be minimal and modern:
+It setups up Python a project using [copier](https://github.com/copier-org/copier),
+a templating tool, to make the whole process quick: you just run
+`uvx uvinit` and then follow the prompts.
+
+The project template used is
+[simple-modern-uv](https://github.com/jlevy/simple-modern-uv),
+which aims to be minimal and modern:
 
 - uv for project setup and dependencies.
 
@@ -279,9 +283,10 @@ def main() -> int:
         rprint(f"[bold]{DESCRIPTION}[/bold]")
         rprint()
         rprint(Markdown(markup=__doc__ or ""))
+        rprint()
 
         rprint()
-        rprint(Rule("Step 1 of 3: Copy template"))
+        rprint(Rule("Step 1 of 3: Copy the project template"))
         rprint()
 
         project_path = copy_template(args.template, args.destination, args.answers_file)
@@ -344,6 +349,11 @@ def main() -> int:
     rprint("Your template code is now ready: [bold]{fmt_path(destination_path)}[/bold]")
     rprint()
     rprint("Your repository is at: [bold yellow]{repo_url}[/bold yellow]")
+    rprint()
+    rprint(
+        "For more information, see `README.md`, `development.md` (for dev workflows), "
+        "and `publishing` (for PyPI publishing instructions), all in your new repository."
+    )
     rprint()
     rprint("Happy coding!")
     return 0

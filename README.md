@@ -11,7 +11,9 @@ Follow](https://img.shields.io/twitter/follow/ojoshe)](https://x.com/ojoshe)
 
 Two words:
 
-**uvx uvinit**
+```
+uvx uvinit
+```
 
 It will guide you!
 
@@ -20,15 +22,15 @@ It will guide you!
 A time-saving CLI tool to quickly start new Python projects with
 [**uv**](https://github.com/astral-sh/uv) using the
 [**simple-modern-uv**](https://github.com/jlevy/simple-modern-uv) template and
-[**copier**]
+[**copier**](https://github.com/copier-org/copier).
 
-It is tiny and sets up **uv**, **ruff** linting and formatting, **GitHub Actions**,
-**publishing to PyPI**, **type checking**, and more.
+**`uvx uvinit`** will clone a new project template and help you set up your GitHub repo.
+The template tiny and sets up **uv**, **ruff** linting and formatting, **GitHub
+Actions**, **publishing to PyPI**, **type checking**, and more.
 
 ## What Project Template Does it Use?
 
-See [simple-modern-uv](https://github.com/jlevy/simple-modern-uv) for full docs!
-
+See [simple-modern-uv](https://github.com/jlevy/simple-modern-uv) for full docs.
 If you have another copier-format template you want to use, however, you can specify it
 with the `--template` argument.
 
