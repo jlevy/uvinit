@@ -46,8 +46,6 @@ Contact me: github.com/jlevy (email), x.com/ojoshe (DMs)
 More information: git.new/uvinit
 """
 
-DESCRIPTION = """uvinit: Create a new Python project with uv using the simple-modern-uv template."""
-
 import argparse
 import sys
 from pathlib import Path
@@ -68,6 +66,10 @@ from uvinit.shell_utils import (
     rprint,
     run_commands_sequence,
 )
+
+APP_NAME = "uvinit"
+
+DESCRIPTION = f"{APP_NAME}: Create a new Python project with uv using the simple-modern-uv template"
 
 DEFAULT_TEMPLATE = "gh:jlevy/simple-modern-uv"
 
@@ -271,12 +273,26 @@ def print_incomplete_git_setup() -> None:
 ERR = 1
 
 
+def get_app_version() -> str:
+    try:
+        from importlib.metadata import version
+
+        return "v" + version(APP_NAME)
+    except Exception:
+        return "unknown"
+
+
 def main() -> int:
     """
     Main entry point for the CLI.
     """
     parser = build_parser()
     args = parser.parse_args()
+
+    # Handle version display
+    if args.version:
+        rprint(f"{APP_NAME} {get_app_version()}")
+        return 0
 
     try:
         rprint()
@@ -394,6 +410,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument("--skip-git", action="store_true", help="Skip GitHub repository setup")
+
+    parser.add_argument("--version", action="store_true", help="Show version information and exit")
 
     return parser
 
