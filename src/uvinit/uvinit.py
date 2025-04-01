@@ -336,9 +336,6 @@ def main() -> int:
         )
         rprint()
 
-        if not questionary.confirm("Is your repository created?", default=True).ask():
-            return ERR
-
         # Set up git repository and push to GitHub.
         repo_url = confirm_github_repo(project_path)
         if not repo_url:
@@ -364,16 +361,17 @@ def main() -> int:
     rprint()
     rprint("[bold green]✓ Project creation complete![/bold green]")
     rprint()
-    rprint("Your template code is now ready: [bold]{fmt_path(destination_path)}[/bold]")
+    rprint(f"Your template code is now ready: [bold]{fmt_path(project_path)}[/bold]")
     rprint()
-    rprint("Your repository is at: [bold yellow]{repo_url}[/bold yellow]")
+    rprint(f"Your repository is at: [bold yellow]{repo_url}[/bold yellow]")
     rprint()
     rprint(
         "For more information, see `README.md`, `development.md` (for dev workflows), "
-        "and `publishing` (for PyPI publishing instructions), all in your new repository."
+        "and `publishing.md` (for PyPI publishing instructions), all in your new repository."
     )
     rprint()
     rprint("Happy coding!")
+    rprint()
     return 0
 
 
