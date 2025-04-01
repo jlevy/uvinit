@@ -4,9 +4,16 @@ Welcome to uvinit!
 This is a fast way to have Python project template that is ready to use,
 using [uv](https://docs.astral.sh/uv/), the modern Python package manager.
 
-It setups up Python a project using [copier](https://github.com/copier-org/copier),
+It sets up a Python project using [copier](https://github.com/copier-org/copier),
 a templating tool, to make the whole process quick: you just run
 `uvx uvinit` and then follow the prompts.
+
+uv has greatly improved Python project setup. But it is still quite confusing
+to find out the best practices to set up a real project in a simple and clean
+way, with dependencies, developer workflows, CI, and publishing to PyPI as a pip.
+
+I built this tool as I was switching to uv, to make the process of setting up
+a new project as low-friction as possible.
 
 The project template used is
 [simple-modern-uv](https://github.com/jlevy/simple-modern-uv),
@@ -28,15 +35,10 @@ which aims to be minimal and modern:
 
 - codespell for drop-in spell checking.
 
-The process of starting a new project shouldn't require reading so many
-docs or trusting an LLM.
+That's quite a bit, but it's just the essentials and is not intended to be complex;
+the template is still very small, so you can adapt it to your needs.
 
-uv makes Python setup much, much easier. But you still have to read a lot of docs.
-I built this tool as I was switching to uv, to make the process of setting up
-a new project as easy as possible.
-However, the template is still very small, so you can adapt it to your needs.
-
-It will ask you to confirm at each step, so there is no harm in getting
+This tool will ask you to confirm at each step, so there is no harm in getting
 started then hitting ctrl-c to abort then rerun again.
 
 Contact me: github.com/jlevy (email), x.com/ojoshe (DMs)
@@ -87,7 +89,7 @@ def copy_template(
     src_path: str,
     dst_path: str | None = None,
     answers_file: str | None = None,
-    data: dict[str, Any] | None = None,
+    user_defaults: dict[str, Any] | None = None,
 ) -> Path | None:
     """
     Create a new Python project using copier with user confirmation.
@@ -108,17 +110,12 @@ def copy_template(
     project_name = Path(dst_path).name
 
     # Prepare default data based on the destination directory name
-    default_data = {
+    user_defaults = {
         # kebab-case for package name
         "package_name": "-".join(project_name.split()).replace("_", "-"),
         # snake_case for module name
         "package_module": "".join(project_name.split()).replace("-", "_"),
     }
-
-    # Merge with any provided data, allowing explicit values to override defaults
-    if not data:
-        data = {}
-    data = {**default_data, **data}
 
     rprint()
     rprint(f"[bold]Creating project from:[/bold] [green]{src_path}[/green]")
@@ -130,15 +127,20 @@ def copy_template(
     rprint()
     rprint(f"[bold blue]copier copy {src_path} {dst_path}[/bold blue]")
     rprint()
-    # rprint(f"data={data}, answers_file={answers_file}", style="bright_black")
-    # rprint()
+    rprint(f"With user_defaults={user_defaults}, answers_file={answers_file}", style="bright_black")
+    rprint()
     if not questionary.confirm("Proceed with template copy?", default=True).ask():
         print_cancelled()
         return None
 
     try:
         rprint()
-        copier.run_copy(src_path=src_path, dst_path=dst_path, data=data, answers_file=answers_file)
+        copier.run_copy(
+            src_path=src_path,
+            dst_path=dst_path,
+            user_defaults=user_defaults,
+            answers_file=answers_file,
+        )
     except (KeyboardInterrupt, copier.CopierAnswersInterrupt):
         print_cancelled()
         return None
