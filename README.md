@@ -1,5 +1,6 @@
 # uvinit
 
+[![CI status](https://github.com/jlevy/uvinit/actions/workflows/ci.yml/badge.svg)](https://github.com/jlevy/uvinit/actions/workflows/ci.yml?query=branch%3Amain)
 [![Documentation](https://img.shields.io/badge/documentation-go)](https://www.github.com/jlevy/simple-modern-uv)
 [![image](https://img.shields.io/pypi/pyversions/uvinit.svg)](https://pypi.python.org/pypi/uvinit)
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
