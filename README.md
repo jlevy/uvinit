@@ -1,7 +1,14 @@
+<div align="center">
+
+<img alt="Using uvinit"
+src="https://github.com/user-attachments/assets/4325c251-26b7-4c4c-b46f-00759e53f7ae" />
+
+</div>
+
 # uvinit
 
-[![CI status](https://github.com/jlevy/uvinit/actions/workflows/ci.yml/badge.svg)](https://github.com/jlevy/uvinit/actions/workflows/ci.yml?query=branch%3Amain)
 [![Documentation](https://img.shields.io/badge/documentation-go)](https://www.github.com/jlevy/simple-modern-uv)
+[![CI status](https://github.com/jlevy/uvinit/actions/workflows/ci.yml/badge.svg)](https://github.com/jlevy/uvinit/actions/workflows/ci.yml?query=branch%3Amain)
 [![image](https://img.shields.io/pypi/pyversions/uvinit.svg)](https://pypi.python.org/pypi/uvinit)
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![Copier](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/copier-org/copier/master/img/badge/badge-grayscale-border.json)](https://github.com/copier-org/copier)
@@ -31,7 +38,9 @@ Actions**, **publishing to PyPI**, **type checking**, and more.
 
 ## What Project Template Does it Use?
 
-See [simple-modern-uv](https://github.com/jlevy/simple-modern-uv) for full docs.
+See [simple-modern-uv](https://github.com/jlevy/simple-modern-uv) for full docs and
+[this thread](https://x.com/ojoshe/status/1901380005084700793) for a bit more context.
+
 If you have another copier-format template you want to use, however, you can specify it
 with the `--template` argument.
 
@@ -42,14 +51,6 @@ Funny you should ask!
 Type [**git.new/uvinit**](https://git.new/uvinit) into your browser.
 
 Tell your friends!
-
-* * *
-
-<div align="center">
-
-<img width="800" alt="Using uvinit" src="https://github.com/user-attachments/assets/4325c251-26b7-4c4c-b46f-00759e53f7ae" />
-
-</div>
 
 * * *
 

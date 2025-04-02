@@ -289,11 +289,6 @@ def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
 
-    # Handle version display
-    if args.version:
-        rprint(f"{APP_NAME} {get_app_version()}")
-        return 0
-
     try:
         rprint()
         rprint(Rule("What is uvinit?"))
@@ -409,7 +404,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     parser.add_argument("--skip-git", action="store_true", help="Skip GitHub repository setup")
 
-    parser.add_argument("--version", action="store_true", help="Show version information and exit")
+    parser.add_argument("--version", action="version", version=f"{APP_NAME} {get_app_version()}")
 
     return parser
 
