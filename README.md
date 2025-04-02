@@ -47,8 +47,7 @@ Tell your friends!
 
 <div align="center">
 
-<img width="600" alt="Step 1 of 3"
-src="https://github.com/user-attachments/assets/216d3db0-de98-4131-be1d-dce38e926474" />
+<img width="800" alt="Using uvinit" src="https://github.com/user-attachments/assets/4325c251-26b7-4c4c-b46f-00759e53f7ae" />
 
 </div>
 
