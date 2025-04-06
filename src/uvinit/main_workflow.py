@@ -1,4 +1,5 @@
 from prettyfmt import fmt_path
+import questionary
 from rich.rule import Rule
 
 from uvinit.copier_workflow import copy_template, read_copier_answers
@@ -49,6 +50,12 @@ def main_workflow(template: str, destination: str, answers_file: str) -> int:
             "If you haven't already created the repository, you can do it now: https://github.com/new"
         )
         rprint()
+        rprint(
+            "If you already have an existing project that's not on uv, "
+            "you can cancel now and copy the files from this project into your "
+            "existing project."
+        )
+        rprint()
 
         # Re-read project metadata from copier answers.
         answers = read_copier_answers(project_path)
@@ -57,6 +64,14 @@ def main_workflow(template: str, destination: str, answers_file: str) -> int:
 
         if not package_name or not package_github_org:
             print_warning("Missing package name or organization.")
+            raise Cancelled()
+
+        confirm = questionary.confirm(
+            "Ready to continue?",
+            default=True,
+        ).ask()
+
+        if not confirm:
             raise Cancelled()
 
         repo_url = create_or_confirm_github_repo(project_path, package_name, package_github_org)

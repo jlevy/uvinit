@@ -115,7 +115,10 @@ def create_or_confirm_github_repo(
             },
         ]
         protocol = questionary.select(
-            "Select GitHub URL format:", choices=proto_choices, default=proto_choices[0]
+            "Which type of GitHub repo URL do you want to use (if unsure, check "
+            "which you use on another project and do that)?",
+            choices=proto_choices,
+            default=proto_choices[0],
         ).ask()
 
         repo_url = github_repo_url(package_github_org, package_name, protocol)

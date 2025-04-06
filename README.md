@@ -38,18 +38,29 @@ A time-saving CLI tool to quickly start new Python projects with
 [**simple-modern-uv**](https://github.com/jlevy/simple-modern-uv) template and
 [**copier**](https://github.com/copier-org/copier).
 
+It's the tool I wish I'd had when setting up projects with uv.
+
 **`uvx uvinit`** will clone a new project template and help you set up your GitHub repo.
 The template tiny and sets up **uv**, **ruff** linting and formatting, **GitHub
 Actions**, **publishing to PyPI**, **type checking**, and more.
 
-## What Project Template Does it Use?
+## What Python Project Template Does it Use?
 
 The [**simple-modern-uv**](https://github.com/jlevy/simple-modern-uv) template.
 See that repo for full docs and
 [this thread](https://x.com/ojoshe/status/1901380005084700793) for a bit more context.
 
+If you prefer, you can use that template directly; uvinit is just a CLI wrapper for the
+template.
+
 If you have another copier-format template you want to use, however, you can specify it
 with the `--template` argument.
+
+## Can I Use it With an Existing Project?
+
+Yes. Just cancel after the template is copied (skip the part that pushes to git) and
+you'll have a new working tree with all the uv and tooling set up.
+Then manually copy over all the parts you want into your existing project.
 
 ## By Chance Is There a Short URL I Can Remember for This Handy Tool?
 
