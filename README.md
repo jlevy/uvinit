@@ -25,6 +25,12 @@ uvx uvinit
 
 It will guide you!
 
+## Do I Need uv?
+
+Yes. You will need to [**have uv installed**](https://github.com/astral-sh/uv).
+Read that page or my [template docs](https://github.com/jlevy/simple-modern-uv) for
+background on why uv is such an improved package manager for Python.
+
 ## What is uvinit?
 
 A time-saving CLI tool to quickly start new Python projects with
@@ -38,7 +44,8 @@ Actions**, **publishing to PyPI**, **type checking**, and more.
 
 ## What Project Template Does it Use?
 
-See [simple-modern-uv](https://github.com/jlevy/simple-modern-uv) for full docs and
+The [**simple-modern-uv**](https://github.com/jlevy/simple-modern-uv) template.
+See that repo for full docs and
 [this thread](https://x.com/ojoshe/status/1901380005084700793) for a bit more context.
 
 If you have another copier-format template you want to use, however, you can specify it
