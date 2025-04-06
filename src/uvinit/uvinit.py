@@ -60,10 +60,16 @@ from rich.rule import Rule
 from rich_argparse.contrib import ParagraphRichHelpFormatter
 
 from uvinit.shell_utils import (
+    Cancelled,
+    Failed,
     print_cancelled,
     print_failed,
+    print_status,
+    print_subtle,
+    print_success,
     print_warning,
     rprint,
+    run_command_with_confirmation,
     run_commands_sequence,
 )
 
@@ -87,68 +93,14 @@ GIT_REMOTE_COMMANDS = [
 ]
 
 
-def copy_template(
-    src_path: str,
-    dst_path: str | None = None,
-    answers_file: str | None = None,
-    user_defaults: dict[str, Any] | None = None,
-) -> Path | None:
+def github_repo_url(package_github_org: str, package_name: str, protocol: str = "ssh") -> str:
     """
-    Create a new Python project using copier with user confirmation.
+    GitHub repository URL based on organization and package name.
     """
-    # If no destination is provided, prompt for it
-    if dst_path is None:
-        dst_path = questionary.text(
-            "Destination directory (usually kebab-case or snake_case):",
-            default="changeme",
-        ).ask()
-
-        if not dst_path:
-            rprint("[yellow]No destination provided.[/yellow]")
-            print_cancelled()
-            return None
-
-    # Extract project name from destination path to pre-fill answers
-    project_name = Path(dst_path).name
-
-    # Prepare default data based on the destination directory name
-    user_defaults = {
-        # kebab-case for package name
-        "package_name": "-".join(project_name.split()).replace("_", "-"),
-        # snake_case for module name
-        "package_module": "".join(project_name.split()).replace("-", "_"),
-    }
-
-    rprint()
-    rprint(f"[bold]Creating project from:[/bold] [green]{src_path}[/green]")
-    rprint()
-    rprint(f"[bold]Destination:[/bold] {fmt_path(dst_path)}")
-    rprint()
-    # Ask for confirmation using questionary to match copier's style
-    rprint("We will now instantiate the template with:")
-    rprint()
-    rprint(f"[bold blue]copier copy {src_path} {dst_path}[/bold blue]")
-    rprint()
-    rprint(f"With user_defaults={user_defaults}, answers_file={answers_file}", style="bright_black")
-    rprint()
-    if not questionary.confirm("Proceed with template copy?", default=True).ask():
-        print_cancelled()
-        return None
-
-    try:
-        rprint()
-        copier.run_copy(
-            src_path=src_path,
-            dst_path=dst_path,
-            user_defaults=user_defaults,
-            answers_file=answers_file,
-        )
-    except (KeyboardInterrupt, copier.CopierAnswersInterrupt):
-        print_cancelled()
-        return None
-
-    rprint("[bold green]✓ Project created successfully[/bold green]")
-    return Path(dst_path)
+    if protocol == "ssh":
+        return f"git@github.com:{package_github_org}/{package_name}.git"
+    else:
+        return f"https://github.com/{package_github_org}/{package_name}.git"
 
 
 def read_copier_answers(project_path: Path) -> dict[str, Any]:
@@ -169,90 +121,187 @@ def read_copier_answers(project_path: Path) -> dict[str, Any]:
 
     if not answers_path.exists():
         raise ValueError(f"Answers file not found: {answers_path}")
-
-    rprint(f"[bright_black]Reading answers from: {answers_path}[/bright_black]")
+    print_subtle(f"Reading answers from: {answers_path}")
     try:
         with open(answers_path) as f:
             return yaml.safe_load(f) or {}
     except Exception as e:
-        rprint(f"[yellow]Warning: Could not read answers file: {e}[/yellow]")
+        print_warning(f"Could not read answers file: {e}")
         return {}
 
 
-def github_repo_url(package_github_org: str, package_name: str, protocol: str = "ssh") -> str:
+def copy_template(
+    src_path: str,
+    dst_path: str | None = None,
+    answers_file: str | None = None,
+    user_defaults: dict[str, Any] | None = None,
+) -> Path:
     """
-    Generate GitHub repository URL based on organization and package name.
+    Create a new Python project using copier with user confirmation.
     """
-    if protocol == "ssh":
-        return f"git@github.com:{package_github_org}/{package_name}.git"
-    else:
-        return f"https://github.com/{package_github_org}/{package_name}.git"
+    # If no destination is provided, prompt for it
+    if dst_path is None:
+        dst_path = questionary.text(
+            "Destination directory (usually kebab-case or snake_case):",
+            default="changeme",
+        ).ask()
 
+        if not dst_path:
+            print_warning("No destination provided.")
+            raise Cancelled()
 
-def confirm_github_repo(project_path: Path) -> str | None:
-    """
-    Set up a git repository for the project and push to GitHub.
-    """
-    # Read project metadata from copier answers
-    answers = read_copier_answers(project_path)
-    package_name = answers.get("package_name")
-    package_github_org = answers.get("package_github_org")
+    # Extract project name from destination path to pre-fill answers
+    project_name = Path(dst_path).name
 
-    if not package_name or not package_github_org:
-        rprint("[yellow]Missing package name or organization.[/yellow]")
-        print_cancelled()
-        return None
-
-    # Ask for protocol preference
-    choices = [
-        {
-            "name": f"ssh (git@github.com:{package_github_org}/{package_name}.git)",
-            "value": "ssh",
-        },
-        {
-            "name": f"https (https://github.com:{package_github_org}/{package_name}.git)",
-            "value": "https",
-        },
-    ]
-
-    protocol = questionary.select(
-        "Select GitHub URL format:", choices=choices, default=choices[0]
-    ).ask()
-
-    repo_url = github_repo_url(package_github_org, package_name, protocol)
+    # Prepare default data based on the destination directory name
+    user_defaults = {
+        # kebab-case for package name
+        "package_name": "-".join(project_name.split()).replace("_", "-"),
+        # snake_case for module name
+        "package_module": "".join(project_name.split()).replace("-", "_"),
+    }
 
     rprint()
-    rprint(f"This will be your GitHub repository URL: [bold yellow]{repo_url}[/bold yellow]")
+    rprint(f"Creating project from: [bold blue]{src_path}[/bold blue]")
+    rprint()
+    rprint(f"Destination: [bold blue]{fmt_path(dst_path)}[/bold blue]")
+    rprint()
+    # Ask for confirmation using questionary to match copier's style
+    rprint("We will now instantiate the template with:")
+    rprint()
+    rprint(f"[bold blue]copier copy {src_path} {dst_path}[/bold blue]")
+    rprint()
+    print_subtle(f"Settings: user_defaults={user_defaults}, answers_file={answers_file}")
+    rprint()
+    if not questionary.confirm("Proceed with template copy?", default=True).ask():
+        raise Cancelled()
+
+    try:
+        rprint()
+        copier.run_copy(
+            src_path=src_path,
+            dst_path=dst_path,
+            user_defaults=user_defaults,
+            answers_file=answers_file,
+        )
+    except (KeyboardInterrupt, copier.CopierAnswersInterrupt):
+        raise Cancelled() from None
+
+    print_success(message="Project template copied successfully.")
+
+    return Path(dst_path)
+
+
+def gh_authenticate() -> None:
+    """
+    Authenticate with GitHub using `gh` if not already authenticated.
+    """
+    try:
+        run_command_with_confirmation(
+            "gh auth status",
+            "Check if you are authenticated with GitHub",
+        )
+        success = True
+    except Failed:
+        success = False
+
+    if not success:
+        rprint()
+        print_status("You are not yet authenticated with GitHub.")
+        rprint()
+        rprint("Let's log in. Follow the prompts from GitHub to log in.")
+        rprint()
+        run_command_with_confirmation(
+            "gh auth login",
+            "Authenticate with GitHub",
+            capture_output=False,  # Important since this gh command is interactive
+        )
+
+    print_success("Authenticated with GitHub.")
+
+
+def create_or_confirm_github_repo(
+    project_path: Path, package_name: str, package_github_org: str
+) -> str:
+    """
+    Confirm or create a GitHub repository for the project.
+    """
+
     rprint()
     rprint(
-        "If you haven't already created the repository, you can do it now. See: https://github.com/new"
+        "If you have the `gh` command installed (see cli.github.com), "
+        "this tool can help you create the repository. Or you can "
+        "create the repo yourself on GitHub.com."
     )
     rprint()
-
-    if not questionary.confirm(
-        "Confirm this is correct and you have created the repository?", default=True
+    if questionary.confirm(
+        "Do you want to create the repository with `gh`?",
+        default=True,
     ).ask():
-        print_cancelled()
-        return None
+        gh_authenticate()
+        rprint()
+        is_public = questionary.confirm(
+            "Is the repository public (if unsure say no as you can always make it public later)?",
+            default=False,
+        ).ask()
+        public_flag_str = "--public" if is_public else "--private"
+        result = run_command_with_confirmation(
+            f"gh repo create {package_name} {public_flag_str}",
+            "Create GitHub repository",
+            cwd=project_path,
+        )
+        repo_url = result.strip()
+        print_success("Created GitHub repository")
+        rprint()
+        rprint(f"Your GitHub repository URL: [bold blue]{repo_url}[/bold blue]")
+        rprint()
+    else:
+        rprint()
+        rprint("Okay, then yo")
+        # Ask for protocol preference
+        proto_choices = [
+            {
+                "name": f"ssh (git@github.com:{package_github_org}/{package_name}.git)",
+                "value": "ssh",
+            },
+            {
+                "name": f"https (https://github.com:{package_github_org}/{package_name}.git)",
+                "value": "https",
+            },
+        ]
+        protocol = questionary.select(
+            "Select GitHub URL format:", choices=proto_choices, default=proto_choices[0]
+        ).ask()
+
+        repo_url = github_repo_url(package_github_org, package_name, protocol)
+
+        rprint()
+        rprint(f"This will be your GitHub repository URL: [bold blue]{repo_url}[/bold blue]")
+        rprint()
+        rprint(
+            "If you haven't already created the repository, you can do it now. See: https://github.com/new"
+        )
+        rprint()
+
+        if not questionary.confirm(
+            "Confirm this is correct and you have created the repository?", default=True
+        ).ask():
+            raise Cancelled()
 
     return repo_url
 
 
-def init_git_repo(project_path: Path, repo_url: str) -> bool:
+def init_git_repo(project_path: Path, repo_url: str) -> None:
     """
-    Initialize a git repository and push to GitHub.
+    Initialize the git repository and push to GitHub.
     """
-
     # Run initialization commands
-    if not run_commands_sequence(GIT_INIT_COMMANDS, project_path):
-        return False
+    run_commands_sequence(GIT_INIT_COMMANDS, project_path)
 
     # Run remote setup commands with the repo URL
-    if not run_commands_sequence(GIT_REMOTE_COMMANDS, project_path, repo_url=repo_url):
-        return False
+    run_commands_sequence(GIT_REMOTE_COMMANDS, project_path, repo_url=repo_url)
 
-    rprint("[bold green]✓ Git repository setup complete![/bold green]")
-    return True
+    print_success("Git repository setup complete.")
 
 
 def print_git_setup_help() -> None:
@@ -265,7 +314,11 @@ def print_incomplete_git_setup() -> None:
     print_warning("Git repository setup not completed.")
     rprint()
     rprint("If you want to continue, you can rerun `uvinit`.")
-    rprint("Or if you want to set up the repository manually, you can use these commands:")
+    rprint(
+        "Or if you want to set up the repository manually, you can "
+        "pick up where you left off by running any commands that failed:"
+    )
+    rprint()
     print_git_setup_help()
     rprint()
 
@@ -303,17 +356,12 @@ def main() -> int:
         rprint()
 
         project_path = copy_template(args.template, args.destination, args.answers_file)
-        if project_path is None:
-            return ERR
-        rprint("\n[bold green]✓ Project creation complete![/bold green]")
-
-        # Ensure we show the correct path, considering it might have been provided via prompt
         rprint()
-        rprint(f"Your project directory is now ready: [bold]{fmt_path(project_path)}[/bold]")
-
-    except KeyboardInterrupt:
+        rprint(f"Your project directory is: [bold blue]{fmt_path(project_path)}[/bold blue]")
+        rprint()
+    except (Cancelled, Failed, KeyboardInterrupt):
         print_cancelled()
-        return 1
+        return ERR
     except Exception as e:
         print_failed(e)
         raise e
@@ -323,7 +371,7 @@ def main() -> int:
         rprint(Rule("Step 2 of 3: Confirm your repository on GitHub.com"))
         rprint()
 
-        rprint(f"Files are now copied to: [bold]{fmt_path(project_path)}[/bold]")
+        rprint(f"Files are now copied to: [bold blue]{fmt_path(project_path)}[/bold blue]")
         rprint()
         rprint("Next, you will need to set up a git repository on GitHub.com.")
         rprint(
@@ -331,22 +379,26 @@ def main() -> int:
         )
         rprint()
 
-        # Set up git repository and push to GitHub.
-        repo_url = confirm_github_repo(project_path)
-        if not repo_url:
-            return ERR
+        # Re-read project metadata from copier answers.
+        answers = read_copier_answers(project_path)
+        package_name = answers.get("package_name")
+        package_github_org = answers.get("package_github_org")
+
+        if not package_name or not package_github_org:
+            print_warning("Missing package name or organization.")
+            raise Cancelled()
+
+        repo_url = create_or_confirm_github_repo(project_path, package_name, package_github_org)
 
         rprint()
         rprint(Rule("Step 3 of 3: Initialize your local git repository"))
         rprint()
 
-        success = init_git_repo(project_path, repo_url)
-        if not success:
-            return ERR
+        init_git_repo(project_path, repo_url)
 
-    except KeyboardInterrupt:
+    except (Cancelled, Failed, KeyboardInterrupt):
         print_cancelled()
-        return 1
+        return ERR
     except Exception as e:
         print_failed(e)
         raise e
@@ -354,11 +406,11 @@ def main() -> int:
         print_incomplete_git_setup()
 
     rprint()
-    rprint("[bold green]✓ Project creation complete![/bold green]")
+    print_success("Project creation complete!")
     rprint()
-    rprint(f"Your template code is now ready: [bold]{fmt_path(project_path)}[/bold]")
+    rprint(f"Your template code is now ready: [bold blue]{fmt_path(project_path)}[/bold blue]")
     rprint()
-    rprint(f"Your repository is at: [bold yellow]{repo_url}[/bold yellow]")
+    rprint(f"Your repository is at: [bold blue]{repo_url}[/bold blue]")
     rprint()
     rprint(
         "For more information, see `README.md`, `development.md` (for dev workflows), "
