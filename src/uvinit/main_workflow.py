@@ -1,5 +1,5 @@
-from prettyfmt import fmt_path
 import questionary
+from prettyfmt import fmt_path
 from rich.rule import Rule
 
 from uvinit.copier_workflow import copy_template, read_copier_answers
@@ -40,7 +40,7 @@ def main_workflow(template: str, destination: str, answers_file: str) -> int:
 
     try:
         rprint()
-        rprint(Rule("Step 2 of 3: Confirm your repository on GitHub.com"))
+        rprint(Rule("Step 2 of 3: Set up your repository on GitHub.com"))
         rprint()
 
         rprint(f"Files are now copied to: [bold blue]{fmt_path(project_path)}[/bold blue]")
@@ -77,7 +77,7 @@ def main_workflow(template: str, destination: str, answers_file: str) -> int:
         repo_url = create_or_confirm_github_repo(project_path, package_name, package_github_org)
 
         rprint()
-        rprint(Rule("Step 3 of 3: Initialize your local git repository"))
+        rprint(Rule("Step 3 of 3: Initialize your local git repo"))
         rprint()
 
         init_git_repo(project_path, repo_url)

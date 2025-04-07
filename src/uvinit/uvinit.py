@@ -1,19 +1,20 @@
 """
 Welcome to uvinit!
 
-This is a fast way to have Python project template that is ready to use,
-using [uv](https://docs.astral.sh/uv/), the modern Python package manager.
+This tool is intended to be the easiest way to start a new, fully configured
+Python project using [uv](https://docs.astral.sh/uv/), the modern Python
+package manager.
 
 It sets up a Python project using [copier](https://github.com/copier-org/copier),
 a templating tool, to make the whole process quick: you just run
 `uvx uvinit` and then follow the prompts.
 
-uv has greatly improved Python project setup. But it is still quite confusing
-to find out the best practices to set up a real project in a simple and clean
-way, with dependencies, developer workflows, CI, and publishing to PyPI as a pip.
-
-I built this tool as I was switching to uv, to make the process of setting up
-a new project as low-friction as possible.
+uv has greatly improved Python project setup. But it can still be confusing
+to find out the best practices to set up a project in a simple and clean
+way, with dependency management, developer workflows, GitHub Actions for CI,
+and publishing to PyPI as a pip. I built (and now personally use) this tool
+as I was switching to uv, to make the process of setting up a new project as
+low-friction as possible.
 
 The project template used is
 [simple-modern-uv](https://github.com/jlevy/simple-modern-uv),
@@ -25,7 +26,8 @@ which aims to be minimal and modern:
 
 - GitHub Actions for CI and publishing workflows.
 
-- Dynamic versioning so release and package publication is as simple as creating a tag/release on GitHub.
+- Dynamic versioning so release and package publication is as simple as creating
+  a tag/release on GitHub.
 
 - Workflows for packaging and publishing to PyPI with uv.
 
@@ -33,17 +35,25 @@ which aims to be minimal and modern:
 
 - Pytest for tests.
 
-- codespell for drop-in spell checking.
+- Codespell for drop-in spell checking.
 
-That's quite a bit, but it's just the essentials and is not intended to be complex;
-the template is still very small, so you can adapt it to your needs.
+Unlike some more complex project templates, this aims only to include the
+essentials for a production-ready Python project. Once it is created, you can
+easily add to or adapt it to your needs.
+
+The setup is in three phases:
+
+1. Copy the project template, instantiating your project name, module name, etc.
+
+2. Set up a GitHub repository and push your project to it.
+
+3. Initialize your local git repo and push to GitHub.
 
 This tool will ask you to confirm at each step, so there is no harm in getting
 started then hitting ctrl-c to abort then rerun again.
 
-Contact me: github.com/jlevy (email), x.com/ojoshe (DMs)
-
 More information: git.new/uvinit
+Contact me with feedback: x.com/ojoshe (DMs), github.com/jlevy (email)
 """
 
 import argparse
