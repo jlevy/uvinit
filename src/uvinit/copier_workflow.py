@@ -6,6 +6,7 @@ import questionary
 import yaml
 from prettyfmt import fmt_path
 
+from uvinit.github_settings import get_github_defaults
 from uvinit.shell_utils import (
     Cancelled,
     print_subtle,
@@ -67,13 +68,26 @@ def copy_template(
     # Extract project name from destination path to pre-fill answers
     project_name = Path(dst_path).name
 
+    github_defaults = get_github_defaults()
+
+    # Initialize user_defaults if not provided
+    if user_defaults is None:
+        user_defaults = {}
+
     # Prepare default data based on the destination directory name
-    user_defaults = {
-        # kebab-case for package name
-        "package_name": "-".join(project_name.split()).replace("_", "-"),
-        # snake_case for module name
-        "package_module": "".join(project_name.split()).replace("-", "_"),
-    }
+    # and GitHub defaults, if available.
+    user_defaults.update(
+        {
+            # kebab-case for package name
+            "package_name": "-".join(project_name.split()).replace("_", "-"),
+            # snake_case for module name
+            "package_module": "".join(project_name.split()).replace("-", "_"),
+            # Add GitHub defaults
+            "package_author_name": github_defaults.author_name or "changeme",
+            "package_author_email": github_defaults.author_email or "changeme@example.com",
+            "package_github_org": github_defaults.github_username or "changeme",
+        }
+    )
 
     rprint()
     rprint(f"Creating project from: [bold blue]{src_path}[/bold blue]")
@@ -85,9 +99,11 @@ def copy_template(
     rprint()
     rprint(f"[bold blue]copier copy {src_path} {dst_path}[/bold blue]")
     rprint()
-    print_subtle(f"Settings: user_defaults={user_defaults}, answers_file={answers_file}")
+    print_subtle(
+        f"Current settings (you will still be able to change these): user_defaults={user_defaults}, answers_file={answers_file}"
+    )
     rprint()
-    if not questionary.confirm("Proceed with template copy?", default=True).ask():
+    if not questionary.confirm("Proceed with copying the template?", default=True).ask():
         raise Cancelled()
 
     try:
