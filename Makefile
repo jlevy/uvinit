@@ -1,5 +1,6 @@
 # Makefile for easy development workflows.
-# GitHub Actions call uv directly.
+# See development.md for docs.
+# Note GitHub Actions call uv directly, not this Makefile.
 
 .DEFAULT_GOAL := default
 
