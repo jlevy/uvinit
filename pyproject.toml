@@ -40,6 +40,7 @@ classifiers = [
 dependencies = [
     "copier>=9.6.0",
     "prettyfmt>=0.2.1",
+    "questionary>=2.1.0",
     "rich>=14.0.0",
     "rich-argparse>=1.7.0",
 ]
