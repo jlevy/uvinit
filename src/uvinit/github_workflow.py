@@ -91,7 +91,7 @@ def create_or_confirm_github_repo(
         ).ask()
         public_flag_str = "--public" if is_public else "--private"
         result = run_command_with_confirmation(
-            f"gh repo create {package_name} {public_flag_str}",
+            f"gh repo create {package_github_org}/{package_name} {public_flag_str}",
             "Create GitHub repository",
             cwd=project_path,
         )
