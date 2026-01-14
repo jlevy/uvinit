@@ -5,6 +5,7 @@ import questionary
 from uvtemplate.shell_utils import (
     Cancelled,
     Failed,
+    confirm_action,
     print_status,
     print_success,
     print_warning,
@@ -37,7 +38,7 @@ def github_repo_url(package_github_org: str, package_name: str, protocol: str = 
         return f"https://github.com/{package_github_org}/{package_name}.git"
 
 
-def gh_authenticate() -> None:
+def gh_authenticate(auto_confirm: bool = False) -> None:
     """
     Authenticate with GitHub using `gh` if not already authenticated.
     """
@@ -45,12 +46,15 @@ def gh_authenticate() -> None:
         run_command_with_confirmation(
             "gh auth status",
             "Check if you are authenticated with GitHub",
+            auto_confirm=auto_confirm,
         )
         success = True
     except Failed:
         success = False
 
     if not success:
+        if auto_confirm:
+            raise Failed("Not authenticated with GitHub. Run 'gh auth login' first.")
         rprint()
         print_status("You are not yet authenticated with GitHub.")
         rprint()
@@ -60,16 +64,32 @@ def gh_authenticate() -> None:
             "gh auth login",
             "Authenticate with GitHub",
             capture_output=False,  # Important since this gh command is interactive
+            auto_confirm=auto_confirm,
         )
 
     print_success("Authenticated with GitHub.")
 
 
 def create_or_confirm_github_repo(
-    project_path: Path, package_name: str, package_github_org: str
+    project_path: Path,
+    package_name: str,
+    package_github_org: str,
+    auto_confirm: bool = False,
+    use_gh_cli: bool = True,
+    is_public: bool = False,
+    git_protocol: str = "ssh",
 ) -> str:
     """
     Confirm or create a GitHub repository for the project.
+
+    Args:
+        project_path: Path to the project directory.
+        package_name: Name of the package/repository.
+        package_github_org: GitHub organization or username.
+        auto_confirm: If True, skip all confirmations (non-interactive mode).
+        use_gh_cli: If True, use gh CLI to create repo. If False, assume repo exists.
+        is_public: If True, create public repo. Only used with use_gh_cli=True.
+        git_protocol: "ssh" or "https" for repository URL. Only used with use_gh_cli=False.
     """
 
     rprint()
@@ -79,21 +99,35 @@ def create_or_confirm_github_repo(
         "create the repo yourself on GitHub.com."
     )
     rprint()
-    if questionary.confirm(
-        "Do you want to create the repository with `gh`?",
-        default=True,
-    ).ask():
-        gh_authenticate()
+
+    # In auto mode, use the provided use_gh_cli value; otherwise ask
+    if auto_confirm:
+        should_use_gh = use_gh_cli
+    else:
+        should_use_gh = confirm_action(
+            "Do you want to create the repository with `gh`?",
+            default=True,
+            auto_confirm=False,
+        )
+
+    if should_use_gh:
+        gh_authenticate(auto_confirm=auto_confirm)
         rprint()
-        is_public = questionary.confirm(
-            "Is the repository public (if unsure say no as you can always make it public later)?",
-            default=False,
-        ).ask()
+
+        # In auto mode, use the provided is_public value; otherwise ask
+        if not auto_confirm:
+            is_public = confirm_action(
+                "Is the repository public (if unsure say no as you can always make it public later)?",
+                default=False,
+                auto_confirm=False,
+            )
+
         public_flag_str = "--public" if is_public else "--private"
         result = run_command_with_confirmation(
             f"gh repo create {package_github_org}/{package_name} {public_flag_str}",
             "Create GitHub repository",
             cwd=project_path,
+            auto_confirm=auto_confirm,
         )
         repo_url = result.strip()
         print_success("Created GitHub repository")
@@ -102,26 +136,27 @@ def create_or_confirm_github_repo(
         rprint()
     else:
         rprint()
-        rprint("Okay, then yo")
-        # Ask for protocol preference
-        proto_choices = [
-            {
-                "name": f"ssh (git@github.com:{package_github_org}/{package_name}.git)",
-                "value": "ssh",
-            },
-            {
-                "name": f"https (https://github.com:{package_github_org}/{package_name}.git)",
-                "value": "https",
-            },
-        ]
-        protocol = questionary.select(
-            "Which type of GitHub repo URL do you want to use (if unsure, check "
-            "which you use on another project and do that)?",
-            choices=proto_choices,
-            default=proto_choices[0],
-        ).ask()
+        if not auto_confirm:
+            rprint("Okay, then you'll need to create the repository manually.")
+            # Ask for protocol preference
+            proto_choices = [
+                {
+                    "name": f"ssh (git@github.com:{package_github_org}/{package_name}.git)",
+                    "value": "ssh",
+                },
+                {
+                    "name": f"https (https://github.com/{package_github_org}/{package_name}.git)",
+                    "value": "https",
+                },
+            ]
+            git_protocol = questionary.select(
+                "Which type of GitHub repo URL do you want to use (if unsure, check "
+                "which you use on another project and do that)?",
+                choices=proto_choices,
+                default=proto_choices[0],
+            ).ask()
 
-        repo_url = github_repo_url(package_github_org, package_name, protocol)
+        repo_url = github_repo_url(package_github_org, package_name, git_protocol)
 
         rprint()
         rprint(f"This will be your GitHub repository URL: [bold blue]{repo_url}[/bold blue]")
@@ -131,23 +166,27 @@ def create_or_confirm_github_repo(
         )
         rprint()
 
-        if not questionary.confirm(
-            "Confirm this is correct and you have created the repository?", default=True
-        ).ask():
+        if not confirm_action(
+            "Confirm this is correct and you have created the repository?",
+            default=True,
+            auto_confirm=auto_confirm,
+        ):
             raise Cancelled()
 
     return repo_url
 
 
-def init_git_repo(project_path: Path, repo_url: str) -> None:
+def init_git_repo(project_path: Path, repo_url: str, auto_confirm: bool = False) -> None:
     """
     Initialize the git repository and push to GitHub.
     """
     # Run initialization commands
-    run_commands_sequence(GIT_INIT_COMMANDS, project_path)
+    run_commands_sequence(GIT_INIT_COMMANDS, project_path, auto_confirm=auto_confirm)
 
     # Run remote setup commands with the repo URL
-    run_commands_sequence(GIT_REMOTE_COMMANDS, project_path, repo_url=repo_url)
+    run_commands_sequence(
+        GIT_REMOTE_COMMANDS, project_path, auto_confirm=auto_confirm, repo_url=repo_url
+    )
 
     print_success("Git repository setup complete.")
 

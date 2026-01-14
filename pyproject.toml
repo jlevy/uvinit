@@ -89,6 +89,13 @@ bump = true
 # The source location for the package.
 packages = ["src/uvtemplate"]
 
+[tool.hatch.build.targets.wheel.force-include]
+# Include README.md in the package for the `readme` command
+"README.md" = "uvtemplate/README.md"
+
+[tool.hatch.build.targets.sdist.force-include]
+"README.md" = "uvtemplate/README.md"
+
 
 # ---- Settings ----
 

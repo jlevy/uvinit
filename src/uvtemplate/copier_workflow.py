@@ -9,6 +9,7 @@ from prettyfmt import fmt_path
 from uvtemplate.github_settings import get_github_defaults
 from uvtemplate.shell_utils import (
     Cancelled,
+    confirm_action,
     print_subtle,
     print_success,
     print_warning,
@@ -50,12 +51,24 @@ def copy_template(
     dst_path: str | None = None,
     answers_file: str | None = None,
     user_defaults: dict[str, Any] | None = None,
+    auto_confirm: bool = False,
 ) -> Path:
     """
     Create a new Python project using copier with user confirmation.
+
+    Args:
+        src_path: Path or URL to the copier template.
+        dst_path: Destination directory for the project.
+        answers_file: Path to a .copier-answers.yml file for defaults.
+        user_defaults: Dictionary of default values for template questions.
+        auto_confirm: If True, skip confirmations and use defaults (non-interactive mode).
     """
-    # If no destination is provided, prompt for it
+    # If no destination is provided, prompt for it (or fail in auto mode)
     if dst_path is None:
+        if auto_confirm:
+            print_warning("No destination provided. Use --destination in non-interactive mode.")
+            raise Cancelled()
+
         dst_path = questionary.text(
             "Destination directory (usually kebab-case or snake_case):",
             default="changeme",
@@ -103,7 +116,10 @@ def copy_template(
         f"Current settings (you will still be able to change these): user_defaults={user_defaults}, answers_file={answers_file}"
     )
     rprint()
-    if not questionary.confirm("Proceed with copying the template?", default=True).ask():
+
+    if not confirm_action(
+        "Proceed with copying the template?", default=True, auto_confirm=auto_confirm
+    ):
         raise Cancelled()
 
     try:
@@ -113,6 +129,7 @@ def copy_template(
             dst_path=dst_path,
             user_defaults=user_defaults,
             answers_file=answers_file,
+            defaults=auto_confirm,  # Use defaults for all unspecified values in auto mode
         )
     except (KeyboardInterrupt, copier.CopierAnswersInterrupt):
         raise Cancelled() from None

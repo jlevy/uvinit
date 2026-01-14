@@ -14,15 +14,31 @@
 [![Copier](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/copier-org/copier/master/img/badge/badge-grayscale-border.json)](https://github.com/copier-org/copier)
 [![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/ojoshe)](https://x.com/ojoshe)
 
-## Usage
+A time-saving CLI tool to quickly start new Python projects with
+[**uv**](https://github.com/astral-sh/uv) using the
+[**simple-modern-uv**](https://github.com/jlevy/simple-modern-uv) template.
 
-Two words:
+## Quick Start
 
+### For Humans (Interactive Mode)
+
+```bash
+uvx uvtemplate create
 ```
-uvx uvtemplate
-```
 
-It will guide you!
+This will guide you through creating a new project step by step.
+
+### For AI Agents (Non-Interactive Mode)
+
+AI coding agents like Claude Code can create projects programmatically:
+
+```bash
+uvx uvtemplate --yes --destination my-project \
+  --data package_name=my-project \
+  --data package_description="My awesome project" \
+  --data package_author_name="Your Name" \
+  --skip-git
+```
 
 ## Do I Need uv?
 
@@ -32,16 +48,146 @@ background on why uv is such an improved package manager for Python.
 
 ## What is uvtemplate?
 
-A time-saving CLI tool to quickly start new Python projects with
-[**uv**](https://github.com/astral-sh/uv) using the
-[**simple-modern-uv**](https://github.com/jlevy/simple-modern-uv) template and
-[**copier**](https://github.com/copier-org/copier).
-
 It's the tool I wish I'd had when setting up projects with uv.
 
-**`uvx uvtemplate`** will clone a new project template and help you set up your GitHub
-repo. The template tiny and sets up **uv**, **ruff** linting and formatting, **GitHub
+**`uvx uvtemplate create`** will clone a new project template and help you set up your GitHub
+repo. The template is tiny and sets up **uv**, **ruff** linting and formatting, **GitHub
 Actions**, **publishing to PyPI**, **type checking**, and more.
+
+## Usage
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `uvtemplate` | Show help and available options |
+| `uvtemplate create` | Start interactive project creation |
+| `uvtemplate readme` | Print this documentation |
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--destination DIR` | Destination directory for the project |
+| `--data KEY=VALUE` | Set a template value (can be repeated) |
+| `--yes` | Auto-confirm all prompts (non-interactive mode) |
+| `--skip-git` | Skip GitHub repository and git setup |
+| `--template URL` | Use a custom copier template |
+| `--answers-file FILE` | Load defaults from a .copier-answers.yml file |
+| `--no-gh-cli` | Don't use gh CLI to create repo |
+| `--public` | Create a public repository (default: private) |
+| `--git-protocol ssh|https` | Git protocol for repo URL (default: ssh) |
+
+### Template Values
+
+Use `--data KEY=VALUE` to set these values:
+
+| Key | Description | Example |
+|-----|-------------|---------|
+| `package_name` | Package name (kebab-case) | `my-project` |
+| `package_module` | Python module name (snake_case) | `my_project` |
+| `package_description` | Short description | `"A useful tool"` |
+| `package_author_name` | Author's name | `"Jane Doe"` |
+| `package_author_email` | Author's email | `"jane@example.com"` |
+| `package_github_org` | GitHub username or org | `"janedev"` |
+
+## Examples
+
+### Interactive (Human) Usage
+
+Start the interactive wizard:
+
+```bash
+uvx uvtemplate create
+```
+
+Skip git setup (just create the project files):
+
+```bash
+uvx uvtemplate create --skip-git
+```
+
+### Non-Interactive (Agent) Usage
+
+Create a complete project without any prompts:
+
+```bash
+uvx uvtemplate --yes --destination my-cli-tool \
+  --data package_name=my-cli-tool \
+  --data package_module=my_cli_tool \
+  --data package_description="A command-line tool for doing things" \
+  --data package_author_name="Claude" \
+  --data package_author_email="ai@example.com" \
+  --data package_github_org="myorg" \
+  --skip-git
+```
+
+Create a project and set up a private GitHub repo:
+
+```bash
+uvx uvtemplate --yes --destination my-project \
+  --data package_name=my-project \
+  --data package_description="My project" \
+  --data package_github_org="myorg"
+```
+
+Create a project with a public GitHub repo:
+
+```bash
+uvx uvtemplate --yes --destination my-project \
+  --data package_name=my-project \
+  --public
+```
+
+### Using an Answers File
+
+If you have a `.copier-answers.yml` from a previous project:
+
+```bash
+uvx uvtemplate --yes --destination new-project \
+  --answers-file /path/to/existing/.copier-answers.yml
+```
+
+## For AI Coding Agents
+
+This tool is designed to work well with AI coding agents like Claude Code, Cursor, GitHub Copilot, etc.
+
+### Key Points for Agents
+
+1. **Use `--yes` flag**: This auto-confirms all prompts, making the tool fully non-interactive.
+
+2. **Provide all values via `--data`**: Set template values upfront to avoid interactive prompts.
+
+3. **Use `--skip-git`** if you want to handle git setup separately or don't need it.
+
+4. **The tool uses exit codes**: `0` for success, `1` for failure/cancellation.
+
+5. **Values are derived intelligently**: If you provide `--destination my-project`, the tool will automatically derive `package_name=my-project` and `package_module=my_project` unless you override them.
+
+### Minimal Agent Example
+
+The simplest non-interactive usage:
+
+```bash
+uvx uvtemplate --yes --destination my-project --skip-git
+```
+
+This creates a project with sensible defaults derived from the destination name and your git/GitHub config.
+
+### Complete Agent Example
+
+For full control:
+
+```bash
+uvx uvtemplate --yes --destination my-project \
+  --data package_name=my-project \
+  --data package_module=my_project \
+  --data package_description="Project description here" \
+  --data package_author_name="Author Name" \
+  --data package_author_email="author@example.com" \
+  --data package_github_org="github-org" \
+  --skip-git
+```
 
 ## What Python Project Template Does it Use?
 
@@ -49,17 +195,25 @@ The [**simple-modern-uv**](https://github.com/jlevy/simple-modern-uv) template.
 See that repo for full docs and
 [this thread](https://x.com/ojoshe/status/1901380005084700793) for a bit more context.
 
-If you prefer, you can use that template directly; uvtemplate is just a CLI wrapper for
-the template.
+The template includes:
 
-If you have another copier-format template you want to use, however, you can specify it
-with the `--template` argument.
+- **uv** for project setup and dependencies
+- **ruff** for modern linting and formatting
+- **GitHub Actions** for CI and publishing workflows
+- **Dynamic versioning** from git tags
+- **PyPI publishing** workflows
+- **BasedPyright** for type checking
+- **Pytest** for tests
+- **Codespell** for spell checking
+
+If you prefer, you can use that template directly; uvtemplate is just a CLI wrapper.
+
+If you have another copier-format template you want to use, specify it with `--template`.
 
 ## Can I Use it With an Existing Project?
 
-Yes. Just cancel after the template is copied (skip the part that pushes to git) and
-you'll have a new working tree with all the uv and tooling set up.
-Then manually copy over all the parts you want into your existing project.
+Yes. Just use `--skip-git` and you'll have a new working tree with all the uv and tooling set up.
+Then manually copy over the parts you want into your existing project.
 
 ## By Chance Is There a Short URL I Can Remember for This Handy Tool?
 

@@ -59,11 +59,25 @@ class Cancelled(RuntimeError):
     """
 
 
+def confirm_action(message: str, default: bool = True, auto_confirm: bool = False) -> bool:
+    """
+    Ask for confirmation, or auto-confirm if in non-interactive mode.
+    """
+    if auto_confirm:
+        rprint(f"[dim]Auto-confirming: {message}[/dim]")
+        return True
+    result = questionary.confirm(message, default=default).ask()
+    if result is None:
+        raise Cancelled()
+    return result
+
+
 def run_command_with_confirmation(
     command: str,
     description: str | None = None,
     cwd: Path | None = None,
     capture_output: bool = True,
+    auto_confirm: bool = False,
 ) -> str:
     """
     Print a command, ask for confirmation, and run it if confirmed.
@@ -75,7 +89,7 @@ def run_command_with_confirmation(
     rprint(f"Will run: [bold]❯[/bold] [bold blue]{command}[/bold blue]")
     rprint()
 
-    if not questionary.confirm("Run this command?", default=True).ask():
+    if not confirm_action("Run this command?", default=True, auto_confirm=auto_confirm):
         raise Cancelled()
 
     try:
@@ -105,7 +119,10 @@ def run_command_with_confirmation(
 
 
 def run_commands_sequence(
-    commands: list[tuple[str, str]], cwd: Path, **format_args: Any
+    commands: list[tuple[str, str]],
+    cwd: Path,
+    auto_confirm: bool = False,
+    **format_args: Any,
 ) -> list[str]:
     """
     Run a sequence of commands with confirmation. Each command is formatted with
@@ -116,7 +133,7 @@ def run_commands_sequence(
     results: list[str] = []
     for cmd_template, description in commands:
         cmd = cmd_template.format(**format_args)
-        result = run_command_with_confirmation(cmd, description, cwd=cwd)
+        result = run_command_with_confirmation(cmd, description, cwd=cwd, auto_confirm=auto_confirm)
         results.append(result)
 
     return results

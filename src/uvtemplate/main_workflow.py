@@ -1,4 +1,5 @@
-import questionary
+from typing import Any
+
 from prettyfmt import fmt_path
 from rich.rule import Rule
 
@@ -11,6 +12,7 @@ from uvtemplate.github_workflow import (
 from uvtemplate.shell_utils import (
     Cancelled,
     Failed,
+    confirm_action,
     print_cancelled,
     print_failed,
     print_success,
@@ -21,13 +23,43 @@ from uvtemplate.shell_utils import (
 ERR = 1
 
 
-def main_workflow(template: str, destination: str, answers_file: str) -> int:
+def main_workflow(
+    template: str,
+    destination: str | None,
+    answers_file: str | None,
+    auto_confirm: bool = False,
+    data: dict[str, Any] | None = None,
+    skip_git: bool = False,
+    use_gh_cli: bool = True,
+    is_public: bool = False,
+    git_protocol: str = "ssh",
+) -> int:
+    """
+    Main workflow for creating a new Python project.
+
+    Args:
+        template: Path or URL to the copier template.
+        destination: Destination directory for the project.
+        answers_file: Path to a .copier-answers.yml file for defaults.
+        auto_confirm: If True, skip all confirmations (non-interactive mode).
+        data: Dictionary of values to pre-fill in the template.
+        skip_git: If True, skip GitHub repository setup entirely.
+        use_gh_cli: If True, use gh CLI to create repo. If False, assume repo exists.
+        is_public: If True, create public repo. Only used with use_gh_cli=True.
+        git_protocol: "ssh" or "https" for repository URL.
+    """
     try:
         rprint()
         rprint(Rule("Step 1 of 3: Copy the project template"))
         rprint()
 
-        project_path = copy_template(template, destination, answers_file)
+        project_path = copy_template(
+            template,
+            destination,
+            answers_file,
+            user_defaults=data,
+            auto_confirm=auto_confirm,
+        )
         rprint()
         rprint(f"Your project directory is: [bold blue]{fmt_path(project_path)}[/bold blue]")
         rprint()
@@ -37,6 +69,17 @@ def main_workflow(template: str, destination: str, answers_file: str) -> int:
     except Exception as e:
         print_failed(e)
         raise e
+
+    # Handle skip_git flag
+    if skip_git:
+        rprint()
+        print_success("Project template copied successfully (skipping git setup).")
+        rprint()
+        rprint(f"Your template code is ready: [bold blue]{fmt_path(project_path)}[/bold blue]")
+        rprint()
+        return 0
+
+    repo_url = ""
 
     try:
         rprint()
@@ -66,21 +109,24 @@ def main_workflow(template: str, destination: str, answers_file: str) -> int:
             print_warning("Missing package name or organization.")
             raise Cancelled()
 
-        confirm = questionary.confirm(
-            "Ready to continue?",
-            default=True,
-        ).ask()
-
-        if not confirm:
+        if not confirm_action("Ready to continue?", default=True, auto_confirm=auto_confirm):
             raise Cancelled()
 
-        repo_url = create_or_confirm_github_repo(project_path, package_name, package_github_org)
+        repo_url = create_or_confirm_github_repo(
+            project_path,
+            package_name,
+            package_github_org,
+            auto_confirm=auto_confirm,
+            use_gh_cli=use_gh_cli,
+            is_public=is_public,
+            git_protocol=git_protocol,
+        )
 
         rprint()
         rprint(Rule("Step 3 of 3: Initialize your local git repo"))
         rprint()
 
-        init_git_repo(project_path, repo_url)
+        init_git_repo(project_path, repo_url, auto_confirm=auto_confirm)
 
     except (Cancelled, Failed, KeyboardInterrupt):
         print_cancelled()

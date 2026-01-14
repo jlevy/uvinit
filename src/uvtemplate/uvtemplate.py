@@ -1,74 +1,22 @@
 """
-Welcome to uvtemplate!
+uvtemplate: Create a new Python project with uv.
 
-This tool is intended to be the easiest way to start a new, fully configured
-Python project using [uv](https://docs.astral.sh/uv/), the modern Python
-package manager.
-
-It sets up a Python project using [copier](https://github.com/copier-org/copier),
-a templating tool, to make the whole process quick: you just run
-`uvx uvtemplate` and then follow the prompts.
-
-uv has greatly improved Python project setup. But it can still be confusing
-to find out the best practices to set up a project in a simple and clean
-way, with dependency management, developer workflows, GitHub Actions for CI,
-and publishing to PyPI as a pip. I built (and now personally use) this tool
-as I was switching to uv, to make the process of setting up a new project as
-low-friction as possible.
-
-The project template used is
-[simple-modern-uv](https://github.com/jlevy/simple-modern-uv),
-which aims to be minimal and modern:
-
-- uv for project setup and dependencies.
-
-- ruff for modern linting and formatting.
-
-- GitHub Actions for CI and publishing workflows.
-
-- Dynamic versioning so release and package publication is as simple as creating
-  a tag/release on GitHub.
-
-- Workflows for packaging and publishing to PyPI with uv.
-
-- Type checking with BasedPyright.
-
-- Pytest for tests.
-
-- Codespell for drop-in spell checking.
-
-Unlike some more complex project templates, this aims only to include the
-essentials for a production-ready Python project. Once it is created, you can
-easily add to or adapt it to your needs.
-
-The setup is in three phases:
-
-1. Copy the project template, instantiating your project name, module name, etc.
-
-2. Set up a GitHub repository and push your project to it.
-
-3. Initialize your local git repo and push to GitHub.
-
-This tool will ask you to confirm at each step, so there is no harm in getting
-started then hitting ctrl-c to abort then rerun again.
-
-More information: git.new/uvtemplate
-Contact me with feedback: x.com/ojoshe (DMs), github.com/jlevy (email)
+Run 'uvtemplate readme' for full documentation.
 """
 
 import argparse
 import sys
+from importlib.resources import files
 from typing import Any
 
+from rich.console import Console
 from rich.markdown import Markdown
 from rich.rule import Rule
 from rich_argparse.contrib import ParagraphRichHelpFormatter
 
 from uvtemplate.copier_workflow import DEFAULT_TEMPLATE
 from uvtemplate.main_workflow import main_workflow
-from uvtemplate.shell_utils import (
-    rprint,
-)
+from uvtemplate.shell_utils import rprint
 
 APP_NAME = "uvtemplate"
 
@@ -84,22 +32,160 @@ def get_app_version() -> str:
         return "unknown"
 
 
+def _strip_html_from_markdown(content: str) -> str:
+    """
+    Strip HTML tags from markdown content for cleaner CLI display.
+    This removes HTML image tags, divs, and badge links that don't render well in terminal.
+    """
+    import re
+
+    # Remove HTML comments
+    content = re.sub(r"<!--.*?-->", "", content, flags=re.DOTALL)
+
+    # Remove <div> tags and their contents if they only contain images/badges
+    content = re.sub(r"<div[^>]*>.*?</div>", "", content, flags=re.DOTALL | re.IGNORECASE)
+
+    # Remove standalone HTML tags like <img>
+    content = re.sub(r"<img[^>]*>", "", content, flags=re.IGNORECASE)
+
+    # Remove badge image links like [![alt](url)](link)
+    content = re.sub(r"\[!\[[^\]]*\]\([^)]*\)\]\([^)]*\)", "", content)
+
+    # Clean up multiple blank lines
+    content = re.sub(r"\n{3,}", "\n\n", content)
+
+    # Remove leading whitespace lines
+    content = content.lstrip()
+
+    return content
+
+
+def get_readme_content() -> str:
+    """
+    Get README content from package resources or source tree.
+    HTML content is stripped for cleaner CLI display.
+    """
+    from pathlib import Path
+
+    content = None
+
+    # Try 1: Load from package resources (README.md is included via hatch force-include)
+    try:
+        readme_file = files("uvtemplate").joinpath("README.md")
+        content = readme_file.read_text()
+    except Exception:
+        pass
+
+    # Try 2: Load from source tree (for development mode)
+    if not content:
+        try:
+            # Go up from src/uvtemplate/uvtemplate.py to project root
+            project_root = Path(__file__).parent.parent.parent
+            readme_path = project_root / "README.md"
+            if readme_path.exists():
+                content = readme_path.read_text()
+        except Exception:
+            pass
+
+    # If we got content, strip HTML for cleaner CLI display
+    if content:
+        return _strip_html_from_markdown(content)
+
+    # Fallback: minimal help text
+    return """# uvtemplate
+
+A time-saving CLI to start a new Python project with uv.
+
+## Quick Start
+
+### Interactive (for humans)
+    uvx uvtemplate create
+
+### Non-Interactive (for AI agents)
+    uvx uvtemplate --yes --destination my-project --skip-git
+
+Run 'uvtemplate --help' for all options.
+
+More info: https://github.com/jlevy/uvtemplate
+"""
+
+
+def parse_data_args(data_args: list[str] | None) -> dict[str, Any]:
+    """
+    Parse --data KEY=VALUE arguments into a dictionary.
+    """
+    if not data_args:
+        return {}
+
+    result: dict[str, Any] = {}
+    for item in data_args:
+        if "=" not in item:
+            print(f"Warning: Invalid --data format '{item}'. Expected KEY=VALUE.", file=sys.stderr)
+            continue
+        key, value = item.split("=", 1)
+        result[key.strip()] = value.strip()
+    return result
+
+
+def cmd_readme() -> int:
+    """Print the README content with Rich formatting and auto-detection."""
+    content = get_readme_content()
+
+    # Create console with auto-detection: will use colors if terminal, plain text if piped
+    # force_terminal=None means auto-detect
+    console = Console(force_terminal=None, width=100)
+    console.print(Markdown(content))
+    return 0
+
+
+def cmd_create(args: argparse.Namespace) -> int:
+    """Run the main project creation workflow."""
+    # Parse --data arguments
+    data = parse_data_args(args.data)
+
+    # Show intro unless in non-interactive mode
+    if not args.yes:
+        readme_content = get_readme_content()
+        rprint()
+        rprint(Rule("What is uvtemplate?"))
+        rprint()
+        rprint(f"[bold]{DESCRIPTION}[/bold]")
+        rprint()
+        rprint(Markdown(markup=readme_content))
+        rprint()
+
+    return main_workflow(
+        template=args.template,
+        destination=args.destination,
+        answers_file=args.answers_file,
+        auto_confirm=args.yes,
+        data=data if data else None,
+        skip_git=args.skip_git,
+        use_gh_cli=not args.no_gh_cli,
+        is_public=args.public,
+        git_protocol=args.git_protocol,
+    )
+
+
 def main() -> int:
     """
     Main entry point for the CLI.
     """
     parser = build_parser()
+
+    # If no arguments, show help
+    if len(sys.argv) == 1:
+        parser.print_help()
+        return 0
+
     args = parser.parse_args()
 
-    rprint()
-    rprint(Rule("What is uvtemplate?"))
-    rprint()
-    rprint(f"[bold]{DESCRIPTION}[/bold]")
-    rprint()
-    rprint(Markdown(markup=__doc__ or ""))
-    rprint()
+    # Handle subcommands
+    if hasattr(args, "func"):
+        return args.func(args)
 
-    return main_workflow(args.template, args.destination, args.answers_file)
+    # Default: run create workflow
+    return cmd_create(args)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -112,33 +198,100 @@ def build_parser() -> argparse.ArgumentParser:
             super().__init__(*args, width=88, **kwargs)
 
     parser = argparse.ArgumentParser(
-        description=DESCRIPTION
-        + "\n\nJust run `uvx uvtemplate` without arguments to interactively create a new project.",
-        epilog=__doc__,
+        description=DESCRIPTION,
+        epilog="Run 'uvtemplate readme' for full documentation, or 'uvtemplate create' to start interactively.",
         formatter_class=CustomFormatter,
     )
 
+    # Subcommands
+    subparsers = parser.add_subparsers(title="commands", dest="command")
+
+    # create subcommand (explicit way to start interactive workflow)
+    create_parser = subparsers.add_parser(
+        "create",
+        help="Create a new project (interactive mode)",
+        formatter_class=CustomFormatter,
+    )
+    create_parser.set_defaults(func=cmd_create)
+    # Add all the same options to the create subcommand
+    _add_create_options(create_parser)
+
+    # readme subcommand
+    readme_parser = subparsers.add_parser(
+        "readme",
+        help="Print the full README documentation",
+        formatter_class=CustomFormatter,
+    )
+    readme_parser.set_defaults(func=lambda _args: cmd_readme())  # pyright: ignore[reportUnknownLambdaType]
+
+    # Main options (for default create workflow when using flags directly)
+    _add_create_options(parser)
+
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"{APP_NAME} {get_app_version()}",
+    )
+
+    return parser
+
+
+def _add_create_options(parser: argparse.ArgumentParser) -> None:
+    """Add options for the create workflow to a parser."""
     parser.add_argument(
         "--template",
         default=DEFAULT_TEMPLATE,
-        help=f"Copier template to use (defaults to {DEFAULT_TEMPLATE}, which is probably what you want)",
+        help=f"Copier template to use (default: {DEFAULT_TEMPLATE})",
     )
 
     parser.add_argument(
         "--destination",
         nargs="?",
-        help="Destination directory (optional, will prompt if not provided)",
+        help="Destination directory (will prompt if not provided)",
     )
 
     parser.add_argument(
-        "--answers-file", help="Path to a .copier-answers.yml file to use for default values"
+        "--answers-file",
+        help="Path to a .copier-answers.yml file to use for default values",
     )
 
-    parser.add_argument("--skip-git", action="store_true", help="Skip GitHub repository setup")
+    parser.add_argument(
+        "--data",
+        action="append",
+        metavar="KEY=VALUE",
+        help="Set a template value (can be repeated). Example: --data package_name=my-project",
+    )
 
-    parser.add_argument("--version", action="version", version=f"{APP_NAME} {get_app_version()}")
+    parser.add_argument(
+        "--yes",
+        action="store_true",
+        help="Auto-confirm all prompts (non-interactive mode for automation/agents)",
+    )
 
-    return parser
+    parser.add_argument(
+        "--skip-git",
+        action="store_true",
+        help="Skip GitHub repository setup and git initialization",
+    )
+
+    parser.add_argument(
+        "--no-gh-cli",
+        action="store_true",
+        help="Don't use gh CLI to create repo (assume repo already exists)",
+    )
+
+    parser.add_argument(
+        "--public",
+        action="store_true",
+        help="Create a public repository (default is private)",
+    )
+
+    parser.add_argument(
+        "--git-protocol",
+        choices=["ssh", "https"],
+        default="ssh",
+        help="Git protocol to use for repository URL (default: ssh)",
+    )
 
 
 if __name__ == "__main__":
