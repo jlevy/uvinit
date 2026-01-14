@@ -2,13 +2,13 @@ import questionary
 from prettyfmt import fmt_path
 from rich.rule import Rule
 
-from uvinit.copier_workflow import copy_template, read_copier_answers
-from uvinit.github_workflow import (
+from uvtemplate.copier_workflow import copy_template, read_copier_answers
+from uvtemplate.github_workflow import (
     create_or_confirm_github_repo,
     init_git_repo,
     print_incomplete_git_setup,
 )
-from uvinit.shell_utils import (
+from uvtemplate.shell_utils import (
     Cancelled,
     Failed,
     print_cancelled,

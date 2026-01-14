@@ -6,8 +6,8 @@ import questionary
 import yaml
 from prettyfmt import fmt_path
 
-from uvinit.github_settings import get_github_defaults
-from uvinit.shell_utils import (
+from uvtemplate.github_settings import get_github_defaults
+from uvtemplate.shell_utils import (
     Cancelled,
     print_subtle,
     print_success,
