@@ -1,5 +1,5 @@
 """
-Welcome to uvinit!
+Welcome to uvtemplate!
 
 This tool is intended to be the easiest way to start a new, fully configured
 Python project using [uv](https://docs.astral.sh/uv/), the modern Python
@@ -7,7 +7,7 @@ package manager.
 
 It sets up a Python project using [copier](https://github.com/copier-org/copier),
 a templating tool, to make the whole process quick: you just run
-`uvx uvinit` and then follow the prompts.
+`uvx uvtemplate` and then follow the prompts.
 
 uv has greatly improved Python project setup. But it can still be confusing
 to find out the best practices to set up a project in a simple and clean
@@ -52,7 +52,7 @@ The setup is in three phases:
 This tool will ask you to confirm at each step, so there is no harm in getting
 started then hitting ctrl-c to abort then rerun again.
 
-More information: git.new/uvinit
+More information: git.new/uvtemplate
 Contact me with feedback: x.com/ojoshe (DMs), github.com/jlevy (email)
 """
 
@@ -64,13 +64,13 @@ from rich.markdown import Markdown
 from rich.rule import Rule
 from rich_argparse.contrib import ParagraphRichHelpFormatter
 
-from uvinit.copier_workflow import DEFAULT_TEMPLATE
-from uvinit.main_workflow import main_workflow
-from uvinit.shell_utils import (
+from uvtemplate.copier_workflow import DEFAULT_TEMPLATE
+from uvtemplate.main_workflow import main_workflow
+from uvtemplate.shell_utils import (
     rprint,
 )
 
-APP_NAME = "uvinit"
+APP_NAME = "uvtemplate"
 
 DESCRIPTION = f"{APP_NAME}: Create a new Python project with uv using the simple-modern-uv template"
 
@@ -92,7 +92,7 @@ def main() -> int:
     args = parser.parse_args()
 
     rprint()
-    rprint(Rule("What is uvinit?"))
+    rprint(Rule("What is uvtemplate?"))
     rprint()
     rprint(f"[bold]{DESCRIPTION}[/bold]")
     rprint()
@@ -113,7 +113,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     parser = argparse.ArgumentParser(
         description=DESCRIPTION
-        + "\n\nJust run `uvx uvinit` without arguments to interactively create a new project.",
+        + "\n\nJust run `uvx uvtemplate` without arguments to interactively create a new project.",
         epilog=__doc__,
         formatter_class=CustomFormatter,
     )

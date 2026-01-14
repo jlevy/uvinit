@@ -2,7 +2,7 @@ from pathlib import Path
 
 import questionary
 
-from uvinit.shell_utils import (
+from uvtemplate.shell_utils import (
     Cancelled,
     Failed,
     print_status,
@@ -161,7 +161,7 @@ def print_git_setup_help() -> None:
 def print_incomplete_git_setup() -> None:
     print_warning("Git repository setup not completed.")
     rprint()
-    rprint("If you want to continue, you can rerun `uvinit`.")
+    rprint("If you want to continue, you can rerun `uvtemplate`.")
     rprint(
         "Or if you want to set up the repository manually, you can "
         "pick up where you left off by running any commands that failed:"
