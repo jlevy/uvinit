@@ -37,7 +37,7 @@ A time-saving CLI tool to quickly start new Python projects with
 [**simple-modern-uv**](https://github.com/jlevy/simple-modern-uv) template and
 [**copier**](https://github.com/copier-org/copier).
 
-It’s the tool I wish I’d had when setting up projects with uv.
+It's the tool I wish I'd had when setting up projects with uv.
 
 **`uvx uvtemplate`** will clone a new project template and help you set up your GitHub
 repo. The template tiny and sets up **uv**, **ruff** linting and formatting, **GitHub
@@ -58,7 +58,7 @@ with the `--template` argument.
 ## Can I Use it With an Existing Project?
 
 Yes. Just cancel after the template is copied (skip the part that pushes to git) and
-you’ll have a new working tree with all the uv and tooling set up.
+you'll have a new working tree with all the uv and tooling set up.
 Then manually copy over all the parts you want into your existing project.
 
 ## By Chance Is There a Short URL I Can Remember for This Handy Tool?
