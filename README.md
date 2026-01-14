@@ -1,13 +1,23 @@
+# uvinit has been renamed to uvtemplate
+
+> **This package has been renamed to `uvtemplate`.**
+>
+> Please use the new package:
+> - **GitHub:** [github.com/jlevy/uvtemplate](https://github.com/jlevy/uvtemplate)
+> - **PyPI:** [pypi.org/project/uvtemplate](https://pypi.org/project/uvtemplate/)
+> - **Usage:** `uvx uvtemplate`
+>
+> This repository and PyPI package are no longer maintained.
+
+---
+
 <div align="center">
 
-<!-- <img alt="Using uvinit"
-src="https://github.com/user-attachments/assets/4325c251-26b7-4c4c-b46f-00759e53f7ae" /> -->
-<img alt="Using uvinit" src="https://github.com/user-attachments/assets/8d048d1c-4fef-4c0c-aa9b-e05885ff4fbf" />
-
+<img alt="Using uvtemplate" src="https://github.com/user-attachments/assets/8d048d1c-4fef-4c0c-aa9b-e05885ff4fbf" />
 
 </div>
 
-# uvinit
+# uvinit (Deprecated)
 
 [![Documentation](https://img.shields.io/badge/documentation-go)](https://www.github.com/jlevy/simple-modern-uv)
 [![CI status](https://github.com/jlevy/uvinit/actions/workflows/ci.yml/badge.svg)](https://github.com/jlevy/uvinit/actions/workflows/ci.yml?query=branch%3Amain)
