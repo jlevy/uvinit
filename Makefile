@@ -6,10 +6,10 @@
 
 .PHONY: default install lint test upgrade build clean
 
-default: install lint test
+default: install lint test 
 
 install:
-	uv sync --all-extras --dev
+	uv sync --all-extras
 
 lint:
 	uv run python devtools/lint.py
@@ -18,7 +18,7 @@ test:
 	uv run pytest
 
 upgrade:
-	uv sync --upgrade
+	uv sync --upgrade --all-extras --dev
 
 build:
 	uv build

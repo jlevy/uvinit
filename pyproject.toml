@@ -51,11 +51,12 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest>=8.3.5",
-    "ruff>=0.11.0",
+    "pytest-sugar>=1.0.0",
+    "ruff>=0.11.9",
     "codespell>=2.4.1",
-    "rich>=13.9.4",
-    "basedpyright>=1.28.2",
-    "funlog>=0.2.0",
+    "rich>=14.0.0",
+    "basedpyright>=1.29.1",
+    "funlog>=0.2.1",
 ]
 
 [project.scripts]
@@ -81,7 +82,7 @@ source = "uv-dynamic-versioning"
 [tool.uv-dynamic-versioning]
 vcs = "git"
 style = "pep440"
-bump = "true"
+bump = true
 
 [tool.hatch.build.targets.wheel]
 # The source location for the package.
@@ -95,8 +96,8 @@ packages = ["src/uvinit"]
 line-length = 100
 
 [tool.ruff.lint]
-# See: https://docs.astral.sh/ruff/rules/
 select = [
+    # See: https://docs.astral.sh/ruff/rules/
     # Basic list from: https://docs.astral.sh/ruff/linter/#rule-selection
     "E", # https://docs.astral.sh/ruff/rules/#error-e
     "F", # https://docs.astral.sh/ruff/rules/#pyflakes-f
@@ -111,6 +112,7 @@ select = [
 
 ]
 ignore = [
+    # Disable some rules that are overly pedantic. Add/remove as desired:
     "E501", # https://docs.astral.sh/ruff/rules/line-too-long/
     "E402", # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file/
     "E731", # https://docs.astral.sh/ruff/rules/lambda-assignment/
@@ -131,18 +133,28 @@ ignore = [
     "ISC002", # https://docs.astral.sh/ruff/rules/multi-line-implicit-string-concatenation/
 ]
 
+[tool.basedpyright]
 # BasedPyright currently seems like the best type checker option, much faster
 # than mypy and with a good extension for VSCode/Cursor.
 # https://marketplace.visualstudio.com/items?itemName=detachhead.basedpyright
 # https://docs.basedpyright.com/latest/configuration/config-files/#sample-pyprojecttoml-file
-[tool.basedpyright]
 include = ["src", "tests", "devtools"]
-# Make ignoring type warnings easier:
+# By default BasedPyright is very strict, so you almost certainly want to disable
+# some of the rules.
+# First, these turn off warnings about (yes) how you ignore warnings:
 reportIgnoreCommentWithoutRule = false
 reportUnnecessaryTypeIgnoreComment = false
-# A few typically noisy warnings, comment/uncomment as desired:
+# A few typically noisy warnings are next.
+# How many you enable is up to you. The first few are off by default, but you can
+# comment/uncomment these as desired:
 reportMissingTypeStubs = false
 reportUnusedCallResult = false
+reportAny = false
+reportExplicitAny = false
+reportImplicitStringConcatenation = false
+reportUnreachable = false
+# reportPrivateImportUsage = false
+# reportPrivateLocalImportUsage = false
 # reportMissingImports = false
 # reportUnnecessaryIsInstance = false
 # reportUnreachable = false
@@ -153,6 +165,7 @@ reportImplicitStringConcatenation = false
 # reportUnknownArgumentType = false
 
 [tool.codespell]
+# Add here as needed:
 # ignore-words-list = "foo,bar"
 # skip = "foo.py,bar.py"
 

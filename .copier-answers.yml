@@ -1,9 +1,9 @@
 # Changes here will be overwritten by Copier. Do not edit manually.
-_commit: v0.2.6
+_commit: v0.2.20
 _src_path: gh:jlevy/simple-modern-uv
 package_author_email: joshua@cal.berkeley.edu
 package_author_name: jlevy
 package_description: A time-saving CLI to start a new Python project with uv
 package_github_org: jlevy
-package_module: uvproject
-package_name: uvproject
+package_module: uvinit
+package_name: uvinit
