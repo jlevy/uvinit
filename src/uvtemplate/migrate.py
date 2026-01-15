@@ -301,7 +301,7 @@ def _extract_template_variables(
     """
     tv = analysis.template_vars
 
-    # Extract from [project] section of pyproject.toml
+    # Extract from [project] section of pyproject.toml (standard PEP 621)
     if pyproject and "project" in pyproject:
         project = pyproject["project"]
 
@@ -322,7 +322,34 @@ def _extract_template_variables(
             if first_author.get("email"):
                 tv.package_author_email = first_author["email"]
 
-    # Try to detect package_module from src/ directory
+    # Extract from [tool.poetry] section for Poetry projects
+    if pyproject and analysis.build_system == BuildSystem.POETRY:
+        poetry = pyproject.get("tool", {}).get("poetry", {})
+
+        # package_name (if not already found)
+        if not tv.package_name and poetry.get("name"):
+            tv.package_name = poetry["name"]
+
+        # package_description (if not already found)
+        if not tv.package_description and poetry.get("description"):
+            tv.package_description = poetry["description"]
+
+        # Poetry authors format: ["Name <email>"] or ["Name"]
+        if not tv.package_author_name:
+            authors = poetry.get("authors", [])
+            if authors:
+                first_author = authors[0]
+                # Parse "Name <email>" format
+                if "<" in first_author and ">" in first_author:
+                    name_part = first_author.split("<")[0].strip()
+                    email_part = first_author.split("<")[1].rstrip(">").strip()
+                    tv.package_author_name = name_part
+                    if not tv.package_author_email:
+                        tv.package_author_email = email_part
+                else:
+                    tv.package_author_name = first_author.strip()
+
+    # Try to detect package_module from src/ directory or root-level packages
     if not tv.package_module:
         tv.package_module = _detect_package_module(analysis.project_dir)
 
@@ -338,18 +365,45 @@ def _extract_template_variables(
 
 def _detect_package_module(project_dir: Path) -> str | None:
     """
-    Detect the Python module name from the src/ directory structure.
-    Looks for src/<module_name>/__init__.py pattern.
+    Detect the Python module name from directory structure.
+    Checks both src/<module_name>/__init__.py (src layout) and
+    <module_name>/__init__.py (flat layout) patterns.
     """
+    # First, try src/ layout (preferred modern layout)
     src_dir = project_dir / "src"
-    if not src_dir.exists():
-        return None
+    if src_dir.exists():
+        for item in src_dir.iterdir():
+            if item.is_dir() and (item / "__init__.py").exists():
+                # Skip common non-module directories
+                if item.name not in ("__pycache__", ".pytest_cache", "tests"):
+                    return item.name
 
-    # Look for directories in src/ that contain __init__.py
-    for item in src_dir.iterdir():
+    # Then, try flat/root layout (common in older projects)
+    # Skip common non-module directories
+    skip_dirs = {
+        "__pycache__",
+        ".pytest_cache",
+        ".ruff_cache",
+        ".mypy_cache",
+        ".venv",
+        "venv",
+        ".git",
+        ".github",
+        ".claude",
+        "tests",
+        "test",
+        "docs",
+        "doc",
+        "build",
+        "dist",
+        "devtools",
+        "scripts",
+        "images",
+        "node_modules",
+    }
+    for item in project_dir.iterdir():
         if item.is_dir() and (item / "__init__.py").exists():
-            # Skip common non-module directories
-            if item.name not in ("__pycache__", ".pytest_cache", "tests"):
+            if item.name not in skip_dirs and not item.name.startswith("."):
                 return item.name
 
     return None
@@ -679,16 +733,27 @@ def run_migration(analysis: ProjectAnalysis) -> None:
     rprint()
     rprint("1. [bold]Review[/bold] the .copier-answers.yml file and edit any incorrect values")
     rprint()
-    rprint("2. [bold]Run[/bold] template update to pull in template files:")
+    rprint("2. [bold]Commit[/bold] the answers file (required before running update):")
+    rprint()
+    rprint(
+        "   [bold cyan]git add .copier-answers.yml && git commit -m 'Add copier answers for template adoption'[/bold cyan]"
+    )
+    rprint()
+    rprint("3. [bold]Run[/bold] template update to pull in template files:")
     rprint()
     rprint("   [bold cyan]uvtemplate update[/bold cyan]")
     rprint()
-    rprint("   Or run copier directly:")
     rprint()
-    rprint("   [bold cyan]copier update[/bold cyan]")
+    rprint("[bold yellow]⚠ First-time migration note:[/bold yellow]")
     rprint()
     rprint(
-        "[dim]The update will prompt you to resolve any conflicts between your files and the template.[/dim]"
+        "[dim]The update will show merge conflicts between your existing files and the template.\n"
+        "This is expected! Review each conflict and choose what to keep:\n"
+        "   - Use 'git diff' to see all changes\n"
+        "   - Edit files to resolve conflicts (look for <<<<<<< markers)\n"
+        "   - Use 'git checkout --theirs <file>' to accept template version\n"
+        "   - Use 'git checkout --ours <file>' to keep your version\n"
+        "   - Commit when done: git add . && git commit -m 'Complete template migration'[/dim]"
     )
 
     # Footer with link to docs
