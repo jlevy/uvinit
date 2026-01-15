@@ -2,19 +2,29 @@
 Project analysis and migration recommendations for uvtemplate migrate command.
 """
 
+from __future__ import annotations
+
+import configparser
+import subprocess
 import tomllib
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
+import yaml
 from rich.panel import Panel
 from rich.rule import Rule
 
+from uvtemplate.copier_workflow import DEFAULT_TEMPLATE
 from uvtemplate.shell_utils import print_subtle, print_success, print_warning, rprint
 
+# Default template version to use when adopting a template
+# This should be updated when new template versions are released
+DEFAULT_TEMPLATE_VERSION = "v0.2.20"
 
-class BuildSystem(Enum):
+
+class BuildSystem(StrEnum):
     """Detected build system types."""
 
     UV = "uv"
@@ -25,6 +35,54 @@ class BuildSystem(Enum):
     PIPENV = "pipenv"
     REQUIREMENTS = "requirements"
     UNKNOWN = "unknown"
+
+
+@dataclass
+class TemplateVariables:
+    """Extracted template variables for .copier-answers.yml."""
+
+    package_name: str | None = None
+    package_module: str | None = None
+    package_description: str | None = None
+    package_author_name: str | None = None
+    package_author_email: str | None = None
+    package_github_org: str | None = None
+
+    def to_answers_dict(self, template_src: str, template_version: str) -> dict[str, Any]:
+        """Convert to a copier answers dictionary."""
+        answers: dict[str, Any] = {
+            "_commit": template_version,
+            "_src_path": template_src,
+        }
+        if self.package_name:
+            answers["package_name"] = self.package_name
+        if self.package_module:
+            answers["package_module"] = self.package_module
+        if self.package_description:
+            answers["package_description"] = self.package_description
+        if self.package_author_name:
+            answers["package_author_name"] = self.package_author_name
+        if self.package_author_email:
+            answers["package_author_email"] = self.package_author_email
+        if self.package_github_org:
+            answers["package_github_org"] = self.package_github_org
+        return answers
+
+    def get_missing_fields(self) -> list[str]:
+        """Return list of fields that are None or 'changeme'."""
+        field_names = [
+            "package_name",
+            "package_module",
+            "package_description",
+            "package_author_name",
+            "package_author_email",
+            "package_github_org",
+        ]
+        return [
+            name
+            for name in field_names
+            if (value := getattr(self, name)) is None or value == "changeme"
+        ]
 
 
 @dataclass
@@ -40,6 +98,8 @@ class ProjectAnalysis:
     # Copier template info (if project was created from a template)
     copier_template: str | None = None
     copier_version: str | None = None
+    # Extracted template variables for adoption
+    template_vars: TemplateVariables = field(default_factory=TemplateVariables)
 
 
 def analyze_project(project_dir: Path) -> ProjectAnalysis:
@@ -58,6 +118,7 @@ def analyze_project(project_dir: Path) -> ProjectAnalysis:
     _extract_copier_info(analysis)
 
     # Try to extract metadata from pyproject.toml if it exists
+    pyproject: dict[str, Any] | None = None
     pyproject_path = project_dir / "pyproject.toml"
     if pyproject_path.exists():
         try:
@@ -72,6 +133,9 @@ def analyze_project(project_dir: Path) -> ProjectAnalysis:
         _extract_pipenv_metadata(analysis)
     elif build_system == BuildSystem.SETUPTOOLS:
         _extract_setuptools_metadata(analysis)
+
+    # Extract template variables for potential adoption
+    _extract_template_variables(analysis, pyproject)
 
     return analysis
 
@@ -199,12 +263,9 @@ def _extract_pipenv_metadata(analysis: ProjectAnalysis) -> None:
 
 def _extract_setuptools_metadata(analysis: ProjectAnalysis) -> None:
     """Extract metadata from setup.py or setup.cfg."""
-    # Try setup.cfg first (safer to parse)
     setup_cfg = analysis.project_dir / "setup.cfg"
     if setup_cfg.exists():
         try:
-            import configparser
-
             config = configparser.ConfigParser()
             config.read(setup_cfg)
             if config.has_option("metadata", "name"):
@@ -217,8 +278,6 @@ def _extract_setuptools_metadata(analysis: ProjectAnalysis) -> None:
 
 def _extract_copier_info(analysis: ProjectAnalysis) -> None:
     """Extract copier template information from .copier-answers.yml."""
-    import yaml
-
     answers_path = analysis.project_dir / ".copier-answers.yml"
     if not answers_path.exists():
         return
@@ -226,14 +285,133 @@ def _extract_copier_info(analysis: ProjectAnalysis) -> None:
     analysis.detected_files.append(".copier-answers.yml")
 
     try:
-        with open(answers_path) as f:
-            answers: dict[str, Any] = yaml.safe_load(f) or {}
-
-        # Extract template source and version
+        answers: dict[str, Any] = yaml.safe_load(answers_path.read_text()) or {}
         analysis.copier_template = answers.get("_src_path")
         analysis.copier_version = answers.get("_commit")
     except Exception as e:
         analysis.warnings.append(f"Could not parse .copier-answers.yml: {e}")
+
+
+def _extract_template_variables(
+    analysis: ProjectAnalysis, pyproject: dict[str, Any] | None
+) -> None:
+    """
+    Extract template variables from pyproject.toml, git, and project structure.
+    Populates analysis.template_vars with best-effort extraction.
+    """
+    tv = analysis.template_vars
+
+    # Extract from [project] section of pyproject.toml
+    if pyproject and "project" in pyproject:
+        project = pyproject["project"]
+
+        # package_name
+        if project.get("name"):
+            tv.package_name = project["name"]
+
+        # package_description
+        if project.get("description"):
+            tv.package_description = project["description"]
+
+        # package_author_name and package_author_email from authors list
+        authors = project.get("authors", [])
+        if authors and isinstance(authors[0], dict):
+            first_author = authors[0]
+            if first_author.get("name"):
+                tv.package_author_name = first_author["name"]
+            if first_author.get("email"):
+                tv.package_author_email = first_author["email"]
+
+    # Try to detect package_module from src/ directory
+    if not tv.package_module:
+        tv.package_module = _detect_package_module(analysis.project_dir)
+
+    # If we have package_name but not module, derive module from name
+    if tv.package_name and not tv.package_module:
+        # Convert kebab-case to snake_case
+        tv.package_module = tv.package_name.replace("-", "_")
+
+    # Try to extract github org from git remote
+    if not tv.package_github_org:
+        tv.package_github_org = _extract_github_org_from_git(analysis.project_dir)
+
+
+def _detect_package_module(project_dir: Path) -> str | None:
+    """
+    Detect the Python module name from the src/ directory structure.
+    Looks for src/<module_name>/__init__.py pattern.
+    """
+    src_dir = project_dir / "src"
+    if not src_dir.exists():
+        return None
+
+    # Look for directories in src/ that contain __init__.py
+    for item in src_dir.iterdir():
+        if item.is_dir() and (item / "__init__.py").exists():
+            # Skip common non-module directories
+            if item.name not in ("__pycache__", ".pytest_cache", "tests"):
+                return item.name
+
+    return None
+
+
+def _extract_github_org_from_git(project_dir: Path) -> str | None:
+    """
+    Extract GitHub organization/username from git remote URL.
+    Handles both SSH (git@github.com:org/repo.git) and HTTPS (https://github.com/org/repo.git) formats.
+    """
+    try:
+        result = subprocess.run(
+            ["git", "remote", "get-url", "origin"],
+            cwd=project_dir,
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            return None
+
+        remote_url = result.stdout.strip()
+
+        # SSH format: git@github.com:org/repo.git
+        if remote_url.startswith("git@github.com:"):
+            path = remote_url.replace("git@github.com:", "").rstrip(".git")
+            parts = path.split("/")
+            if len(parts) >= 1:
+                return parts[0]
+
+        # HTTPS format: https://github.com/org/repo.git
+        if "github.com/" in remote_url:
+            # Extract path after github.com/
+            path = remote_url.split("github.com/")[-1].rstrip(".git")
+            parts = path.split("/")
+            if len(parts) >= 1:
+                return parts[0]
+
+    except Exception:
+        pass
+
+    return None
+
+
+def write_copier_answers(
+    project_dir: Path,
+    template_vars: TemplateVariables,
+    template_src: str = DEFAULT_TEMPLATE,
+    template_version: str = DEFAULT_TEMPLATE_VERSION,
+) -> Path:
+    """
+    Write .copier-answers.yml file to enable future template updates.
+    Returns the path to the created file.
+    """
+    answers = template_vars.to_answers_dict(template_src, template_version)
+    answers_path = project_dir / ".copier-answers.yml"
+
+    # Write with the standard copier header comment
+    content = "# Changes here will be overwritten by Copier. Do not edit manually.\n"
+    content += yaml.dump(answers, default_flow_style=False, sort_keys=True)
+
+    answers_path.write_text(content)
+    return answers_path
 
 
 def generate_recommendations(analysis: ProjectAnalysis) -> list[str]:
@@ -369,8 +547,8 @@ def generate_recommendations(analysis: ProjectAnalysis) -> list[str]:
     return recommendations
 
 
-def display_analysis(analysis: ProjectAnalysis) -> None:
-    """Display the project analysis and migration recommendations."""
+def run_migration(analysis: ProjectAnalysis) -> None:
+    """Run the migration: create answers file, display analysis, and show next steps."""
     rprint()
     rprint(Rule("Project Analysis"))
     rprint()
@@ -387,15 +565,23 @@ def display_analysis(analysis: ProjectAnalysis) -> None:
                 rprint(f"[bold]Version:[/bold] {analysis.copier_version}")
             rprint()
 
-        # Show update recommendations
-        rprint(Rule("Update Recommendations"))
-        rprint()
-        recommendations = generate_recommendations(analysis)
-        for rec in recommendations:
-            rprint(rec)
-        return
+            # Already has answers file - just suggest update
+            rprint(Rule("Next Steps"))
+            rprint()
+            rprint("This project is already set up for template updates. Run:")
+            rprint()
+            rprint("   [bold cyan]uvtemplate update[/bold cyan]")
+            rprint()
+            rprint("Or run copier directly:")
+            rprint()
+            rprint("   [bold cyan]copier update[/bold cyan]")
+            return
 
-    if analysis.build_system == BuildSystem.UNKNOWN:
+        # UV project but no copier answers - we'll create one
+        rprint("This project uses uv but was not created from a copier template.")
+        rprint()
+
+    elif analysis.build_system == BuildSystem.UNKNOWN:
         print_warning("Could not detect a build system")
     else:
         rprint(f"[bold]Detected:[/bold] {analysis.build_system.value.title()} project")
@@ -418,30 +604,108 @@ def display_analysis(analysis: ProjectAnalysis) -> None:
         for warning in analysis.warnings:
             print_warning(warning)
 
-    # Generate and display recommendations
+    # Display extracted template variables
+    rprint()
+    rprint(Rule("Extracted Template Variables"))
+    rprint()
+
+    tv = analysis.template_vars
+    _display_template_var("package_name", tv.package_name)
+    _display_template_var("package_module", tv.package_module)
+    _display_template_var("package_description", tv.package_description)
+    _display_template_var("package_author_name", tv.package_author_name)
+    _display_template_var("package_author_email", tv.package_author_email)
+    _display_template_var("package_github_org", tv.package_github_org)
+
+    # Check if answers file already exists
+    answers_path = analysis.project_dir / ".copier-answers.yml"
+    if answers_path.exists():
+        rprint()
+        print_warning(f".copier-answers.yml already exists at {answers_path}")
+        rprint("Skipping creation. Delete it first if you want to regenerate.")
+    else:
+        # Create the answers file
+        rprint()
+        rprint(Rule("Creating .copier-answers.yml"))
+        rprint()
+
+        try:
+            created_path = write_copier_answers(
+                analysis.project_dir,
+                analysis.template_vars,
+                template_src=DEFAULT_TEMPLATE,
+                template_version=DEFAULT_TEMPLATE_VERSION,
+            )
+            print_success(f"Created: {created_path}")
+            rprint()
+            rprint("[dim]This file enables future template updates with 'uvtemplate update'.[/dim]")
+        except Exception as e:
+            print_warning(f"Could not create .copier-answers.yml: {e}")
+
+    # Show missing fields that need review
+    missing = tv.get_missing_fields()
+    if missing:
+        rprint()
+        print_warning("Some fields could not be extracted and may need manual editing:")
+        for field in missing:
+            rprint(f"   - {field}")
+        rprint()
+        rprint("[dim]Edit .copier-answers.yml to fill in missing values.[/dim]")
+
+    # Generate and display migration recommendations
     rprint()
     rprint(Rule("Migration Recommendations"))
     rprint()
 
     recommendations = generate_recommendations(analysis)
 
-    rprint("To migrate this project to uv:\n")
+    if analysis.build_system != BuildSystem.UV:
+        rprint("To complete the migration to uv:\n")
 
-    for i, rec in enumerate(recommendations, 1):
-        # Format as a numbered list with the action highlighted
-        lines = rec.split("\n")
-        action = lines[0]
-        details = "\n".join(lines[1:]) if len(lines) > 1 else ""
+        for i, rec in enumerate(recommendations, 1):
+            # Format as a numbered list with the action highlighted
+            lines = rec.split("\n")
+            action = lines[0]
+            details = "\n".join(lines[1:]) if len(lines) > 1 else ""
 
-        rprint(f"[bold cyan]{i}.[/bold cyan] [bold]{action}[/bold]")
-        if details:
-            rprint(f"[dim]{details}[/dim]")
-        rprint()
+            rprint(f"[bold cyan]{i}.[/bold cyan] [bold]{action}[/bold]")
+            if details:
+                rprint(f"[dim]{details}[/dim]")
+            rprint()
+
+    # Show next steps for template updates
+    rprint()
+    rprint(Rule("Next Steps"))
+    rprint()
+    rprint("1. [bold]Review[/bold] the .copier-answers.yml file and edit any incorrect values")
+    rprint()
+    rprint("2. [bold]Run[/bold] template update to pull in template files:")
+    rprint()
+    rprint("   [bold cyan]uvtemplate update[/bold cyan]")
+    rprint()
+    rprint("   Or run copier directly:")
+    rprint()
+    rprint("   [bold cyan]copier update[/bold cyan]")
+    rprint()
+    rprint(
+        "[dim]The update will prompt you to resolve any conflicts between your files and the template.[/dim]"
+    )
 
     # Footer with link to docs
+    rprint()
     rprint(
         Panel(
             "For template reference: [link=https://github.com/jlevy/simple-modern-uv]https://github.com/jlevy/simple-modern-uv[/link]",
             style="dim",
         )
     )
+
+
+def _display_template_var(name: str, value: str | None) -> None:
+    """Display a template variable with its extraction status."""
+    if value and value != "changeme":
+        rprint(f"  [green]✓[/green] {name}: [bold]{value}[/bold]")
+    elif value == "changeme":
+        rprint(f"  [yellow]?[/yellow] {name}: [dim]changeme (needs review)[/dim]")
+    else:
+        rprint(f"  [red]✗[/red] {name}: [dim]not found[/dim]")
