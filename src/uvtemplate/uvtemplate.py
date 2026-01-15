@@ -138,6 +138,71 @@ def cmd_readme() -> int:
     return 0
 
 
+def cmd_migrate(args: argparse.Namespace) -> int:
+    """Analyze a project and show migration recommendations."""
+    from pathlib import Path
+
+    from uvtemplate.migrate import analyze_project, display_analysis
+
+    project_dir = Path(args.directory) if args.directory else Path.cwd()
+
+    if not project_dir.exists():
+        rprint(f"[red]Error: Directory does not exist: {project_dir}[/red]")
+        return 1
+
+    if not project_dir.is_dir():
+        rprint(f"[red]Error: Not a directory: {project_dir}[/red]")
+        return 1
+
+    analysis = analyze_project(project_dir)
+    display_analysis(analysis)
+    return 0
+
+
+def cmd_update(args: argparse.Namespace) -> int:
+    """Update project to the latest template version using copier."""
+    import subprocess
+    from pathlib import Path
+
+    project_dir = Path(args.directory) if args.directory else Path.cwd()
+
+    if not project_dir.exists():
+        rprint(f"[red]Error: Directory does not exist: {project_dir}[/red]")
+        return 1
+
+    if not project_dir.is_dir():
+        rprint(f"[red]Error: Not a directory: {project_dir}[/red]")
+        return 1
+
+    answers_file = project_dir / ".copier-answers.yml"
+    if not answers_file.exists():
+        rprint("[red]Error: No .copier-answers.yml found.[/red]")
+        rprint()
+        rprint("This project was not created with uvtemplate or copier.")
+        rprint("Run 'uvtemplate migrate' for migration recommendations.")
+        return 1
+
+    # Build the copier update command
+    cmd = ["copier", "update"]
+    if args.yes:
+        cmd.append("--defaults")
+
+    rprint(f"[bold]Updating project in:[/bold] {project_dir}")
+    rprint(f"[bold]Running:[/bold] {' '.join(cmd)}")
+    rprint()
+
+    try:
+        # Run copier update in the project directory
+        result = subprocess.run(cmd, cwd=project_dir)
+        return result.returncode
+    except FileNotFoundError:
+        rprint("[red]Error: copier not found. Install it with: uv tool install copier[/red]")
+        return 1
+    except KeyboardInterrupt:
+        rprint("\n[yellow]Update cancelled.[/yellow]")
+        return 1
+
+
 def cmd_create(args: argparse.Namespace) -> int:
     """Run the main project creation workflow."""
     # Parse --data arguments
@@ -199,7 +264,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     parser = argparse.ArgumentParser(
         description=DESCRIPTION,
-        epilog="Run 'uvtemplate readme' for full documentation, or 'uvtemplate create' to start interactively.",
+        epilog="Run 'uvtemplate create' to start a new project, 'uvtemplate migrate' to analyze an existing project, 'uvtemplate update' to update a template-based project, or 'uvtemplate readme' for full documentation.",
         formatter_class=CustomFormatter,
     )
 
@@ -223,6 +288,40 @@ def build_parser() -> argparse.ArgumentParser:
         formatter_class=CustomFormatter,
     )
     readme_parser.set_defaults(func=lambda _args: cmd_readme())  # pyright: ignore[reportUnknownLambdaType]
+
+    # migrate subcommand
+    migrate_parser = subparsers.add_parser(
+        "migrate",
+        help="Analyze a project and show migration recommendations",
+        formatter_class=CustomFormatter,
+    )
+    migrate_parser.set_defaults(func=cmd_migrate)
+    migrate_parser.add_argument(
+        "--directory",
+        "-d",
+        default=None,
+        help="Project directory to analyze (default: current directory)",
+    )
+
+    # update subcommand
+    update_parser = subparsers.add_parser(
+        "update",
+        help="Update project to the latest template version",
+        formatter_class=CustomFormatter,
+    )
+    update_parser.set_defaults(func=cmd_update)
+    update_parser.add_argument(
+        "--directory",
+        "-d",
+        default=None,
+        help="Project directory to update (default: current directory)",
+    )
+    update_parser.add_argument(
+        "--yes",
+        "-y",
+        action="store_true",
+        help="Auto-accept all template defaults (non-interactive mode)",
+    )
 
     # Main options (for default create workflow when using flags directly)
     _add_create_options(parser)
