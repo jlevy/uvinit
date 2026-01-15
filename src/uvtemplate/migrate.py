@@ -499,10 +499,11 @@ def generate_recommendations(analysis: ProjectAnalysis) -> list[str]:
         recommendations.append("Then copy the pyproject.toml structure to your project.")
         return recommendations
 
-    # Common first step: create reference template
+    # Common first step: reference the template
     recommendations.append(
-        "CREATE a fresh template for reference:\n"
-        "   uvtemplate create --skip-git --destination .uvtemplate-ref"
+        "REFERENCE the template pyproject.toml:\n"
+        "   https://github.com/jlevy/simple-modern-uv/blob/main/template/pyproject.toml.jinja\n"
+        "   (Or run: uvtemplate create --skip-git --destination .uvtemplate-ref)"
     )
 
     # Build system specific recommendations
@@ -515,6 +516,13 @@ def generate_recommendations(analysis: ProjectAnalysis) -> list[str]:
             "   - Move dev dependencies to \\[dependency-groups.dev]\n"
             "   - Add \\[tool.ruff], \\[tool.basedpyright], \\[tool.pytest.ini_options] from template\n"
             "   - Remove \\[tool.poetry] section entirely"
+        )
+        recommendations.append(
+            "CONVERT dependency syntax (Poetry → PEP 621):\n"
+            '   - python = "^3.10"       →  requires-python = ">=3.10"\n'
+            '   - requests = "^2.28"     →  "requests>=2.28"\n'
+            '   - click = "~8.0"         →  "click>=8.0,<8.1"\n'
+            '   - foo = { version = "^1.0", extras = ["bar"] }  →  "foo[bar]>=1.0"'
         )
         recommendations.append(
             "DELETE obsolete files:\n   - poetry.lock (uv sync will create uv.lock)"
@@ -593,10 +601,6 @@ def generate_recommendations(analysis: ProjectAnalysis) -> list[str]:
     )
 
     recommendations.append("RUN:\n   uv sync")
-
-    recommendations.append(
-        "CLEANUP:\n   rm -rf .uvtemplate-ref  # Remove the reference template when done"
-    )
 
     return recommendations
 
@@ -727,34 +731,59 @@ def run_migration(analysis: ProjectAnalysis) -> None:
                 rprint(f"[dim]{details}[/dim]")
             rprint()
 
-    # Show next steps for template updates
+    # Show next steps - different for UV vs other build systems
     rprint()
     rprint(Rule("Next Steps"))
     rprint()
-    rprint("1. [bold]Review[/bold] the .copier-answers.yml file and edit any incorrect values")
-    rprint()
-    rprint("2. [bold]Commit[/bold] the answers file (required before running update):")
-    rprint()
-    rprint(
-        "   [bold cyan]git add .copier-answers.yml && git commit -m 'Add copier answers for template adoption'[/bold cyan]"
-    )
-    rprint()
-    rprint("3. [bold]Run[/bold] template update to pull in template files:")
-    rprint()
-    rprint("   [bold cyan]uvtemplate update[/bold cyan]")
-    rprint()
-    rprint()
-    rprint("[bold yellow]⚠ First-time migration note:[/bold yellow]")
-    rprint()
-    rprint(
-        "[dim]The update will show merge conflicts between your existing files and the template.\n"
-        "This is expected! Review each conflict and choose what to keep:\n"
-        "   - Use 'git diff' to see all changes\n"
-        "   - Edit files to resolve conflicts (look for <<<<<<< markers)\n"
-        "   - Use 'git checkout --theirs <file>' to accept template version\n"
-        "   - Use 'git checkout --ours <file>' to keep your version\n"
-        "   - Commit when done: git add . && git commit -m 'Complete template migration'[/dim]"
-    )
+
+    if analysis.build_system != BuildSystem.UV:
+        # For non-UV projects, emphasize manual migration first
+        rprint(
+            "[bold yellow]⚠ Important:[/bold yellow] This is a [bold]guided manual migration[/bold]."
+        )
+        rprint()
+        rprint(
+            "[dim]uvtemplate update does NOT automatically transform your pyproject.toml.\n"
+            "You must manually update your pyproject.toml first (see recommendations above),\n"
+            "then use uvtemplate update to pull in CI workflows, Makefile, etc.[/dim]"
+        )
+        rprint()
+        rprint("1. [bold]Manually update[/bold] pyproject.toml following the recommendations above")
+        rprint(
+            "   [dim]See template reference for examples: https://github.com/jlevy/simple-modern-uv[/dim]"
+        )
+        rprint()
+        rprint("2. [bold]Run[/bold] uv sync to verify your pyproject.toml is valid:")
+        rprint()
+        rprint("   [bold cyan]uv sync[/bold cyan]")
+        rprint()
+        rprint("3. [bold]Commit[/bold] your changes, including .copier-answers.yml:")
+        rprint()
+        rprint(
+            "   [bold cyan]git add -A && git commit -m 'Migrate to uv with simple-modern-uv template'[/bold cyan]"
+        )
+        rprint()
+        rprint("4. [bold]Optionally run[/bold] uvtemplate update to pull in CI/tooling files:")
+        rprint()
+        rprint("   [bold cyan]uvtemplate update[/bold cyan]")
+        rprint()
+        rprint(
+            "[dim]This will show merge conflicts for files like .github/workflows/*.yml.\n"
+            "Resolve conflicts by choosing template or existing versions, then commit.[/dim]"
+        )
+    else:
+        # For UV projects, simpler flow
+        rprint("1. [bold]Review[/bold] the .copier-answers.yml file and edit any incorrect values")
+        rprint()
+        rprint("2. [bold]Commit[/bold] the answers file:")
+        rprint()
+        rprint(
+            "   [bold cyan]git add .copier-answers.yml && git commit -m 'Add copier answers for template adoption'[/bold cyan]"
+        )
+        rprint()
+        rprint("3. [bold]Run[/bold] uvtemplate update to sync with template:")
+        rprint()
+        rprint("   [bold cyan]uvtemplate update[/bold cyan]")
 
     # Footer with link to docs
     rprint()
