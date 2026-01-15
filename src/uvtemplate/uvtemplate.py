@@ -142,7 +142,7 @@ def cmd_migrate(args: argparse.Namespace) -> int:
     """Analyze a project and show migration recommendations."""
     from pathlib import Path
 
-    from uvtemplate.migrate import analyze_project, display_analysis
+    from uvtemplate.migrate import analyze_project, run_migration
 
     project_dir = Path(args.directory) if args.directory else Path.cwd()
 
@@ -155,7 +155,7 @@ def cmd_migrate(args: argparse.Namespace) -> int:
         return 1
 
     analysis = analyze_project(project_dir)
-    display_analysis(analysis)
+    run_migration(analysis)
     return 0
 
 
