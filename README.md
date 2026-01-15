@@ -9,7 +9,7 @@
 
 [![Documentation](https://img.shields.io/badge/documentation-go)](https://www.github.com/jlevy/simple-modern-uv)
 [![CI status](https://github.com/jlevy/uvtemplate/actions/workflows/ci.yml/badge.svg)](https://github.com/jlevy/uvtemplate/actions/workflows/ci.yml?query=branch%3Amain)
-[![image](https://img.shields.io/pypi/pyversions/uvtemplate.svg)](https://pypi.python.org/pypi/uvtemplate)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/uvtemplate.svg?v=1)](https://pypi.python.org/pypi/uvtemplate)
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![Copier](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/copier-org/copier/master/img/badge/badge-grayscale-border.json)](https://github.com/copier-org/copier)
 [![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/ojoshe)](https://x.com/ojoshe)
@@ -264,9 +264,9 @@ cd my-project
 uvx uvtemplate update
 ```
 
-This uses [copier](https://github.com/copier-org/copier) under the hood to apply template
-updates while preserving your customizations. The command will show you what changed and
-let you resolve any conflicts.
+This uses [copier](https://github.com/copier-org/copier) under the hood to apply
+template updates while preserving your customizations.
+The command will show you what changed and let you resolve any conflicts.
 
 For non-interactive updates (useful for AI agents):
 
