@@ -39,8 +39,10 @@ classifiers = [
 # ---- Main dependencies ----
 
 dependencies = [
-    "copier>=9.6.0",
+    "copier>=9.14.1",
     "prettyfmt>=0.2.1",
+    # Security floor for Rich/Copier transitive dependency.
+    "pygments>=2.20.0",
     "questionary>=2.1.0",
     "rich>=14.0.0",
     "rich-argparse>=1.7.0",
@@ -51,13 +53,16 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "pytest>=8.3.5",
-    "pytest-sugar>=1.0.0",
-    "ruff>=0.11.9",
-    "codespell>=2.4.1",
-    "rich>=14.0.0",
-    "basedpyright>=1.29.1",
+    "pytest>=9.0.3",
+    "pytest-sugar>=1.1.1",
+    "ruff>=0.15.12",
+    "codespell>=2.4.2",
+    "rich>=15.0.0",
+    "basedpyright>=1.39.3",
     "funlog>=0.2.1",
+    # Security floor for pip-audit/requests transitive dependency.
+    "idna>=3.15",
+    "pip-audit>=2.9.0",
 ]
 
 [project.scripts]
@@ -113,9 +118,9 @@ select = [
     "B", # https://docs.astral.sh/ruff/rules/#flake8-bugbear-b
     "I", # https://docs.astral.sh/ruff/rules/#isort-i
     # Other possibilities:
-    # "D" # https://docs.astral.sh/ruff/rules/#pydocstyle-d
-    # "Q" # https://docs.astral.sh/ruff/rules/#flake8-quotes-q
-    # "COM" # https://docs.astral.sh/ruff/rules/#flake8-commas-com
+    # "D", # https://docs.astral.sh/ruff/rules/#pydocstyle-d
+    # "Q", # https://docs.astral.sh/ruff/rules/#flake8-quotes-q
+    # "COM", # https://docs.astral.sh/ruff/rules/#flake8-commas-com
     # "SIM", # https://docs.astral.sh/ruff/rules/#flake8-simplify-sim
 
 ]

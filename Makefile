@@ -1,27 +1,42 @@
 # Makefile for easy development workflows.
-# See development.md for docs.
+# See docs/development.md for docs.
 # Note GitHub Actions call uv directly, not this Makefile.
 
 .DEFAULT_GOAL := default
 
-.PHONY: default install lint test upgrade build clean
+UV ?= UV_NO_CONFIG=1 uv
+UV_RUN ?= $(UV) run --frozen
+EXCLUDE_NEWER_DATE := $(shell date -u -v-14d +%Y-%m-%d 2>/dev/null || date -u -d '14 days ago' +%Y-%m-%d)
 
-default: install lint test 
+.PHONY: default install lint lint-check test audit upgrade sync-frozen build clean
+
+default: install lint test audit
 
 install:
-	uv sync --all-extras
+	$(UV) sync --all-extras
 
 lint:
-	uv run python devtools/lint.py
+	$(UV_RUN) python devtools/lint.py
+
+# Check-only lint, matching CI (does not modify files).
+lint-check:
+	$(UV_RUN) python devtools/lint.py --check
 
 test:
-	uv run pytest
+	$(UV_RUN) pytest
+
+audit:
+	$(UV_RUN) pip-audit
 
 upgrade:
-	uv sync --upgrade --all-extras --dev
+	$(UV) lock --upgrade --exclude-newer $(EXCLUDE_NEWER_DATE)
+	$(UV) sync --all-extras --dev
+
+sync-frozen:
+	$(UV) sync --frozen --all-extras
 
 build:
-	uv build
+	$(UV) build
 
 clean:
 	-rm -rf dist/
