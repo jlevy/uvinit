@@ -39,8 +39,10 @@ classifiers = [
 # ---- Main dependencies ----
 
 dependencies = [
-    "copier>=9.6.0",
+    "copier>=9.14.1",
     "prettyfmt>=0.2.1",
+    # Security floor for Rich/Copier transitive dependency.
+    "pygments>=2.20.0",
     "questionary>=2.1.0",
     "rich>=14.0.0",
     "rich-argparse>=1.7.0",
@@ -58,6 +60,9 @@ dev = [
     "rich>=15.0.0",
     "basedpyright>=1.39.3",
     "funlog>=0.2.1",
+    # Security floor for pip-audit/requests transitive dependency.
+    "idna>=3.15",
+    "pip-audit>=2.9.0",
 ]
 
 [project.scripts]

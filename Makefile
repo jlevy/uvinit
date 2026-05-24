@@ -4,28 +4,38 @@
 
 .DEFAULT_GOAL := default
 
-.PHONY: default install lint lint-check test upgrade build clean
+UV ?= UV_NO_CONFIG=1 uv
+EXCLUDE_NEWER_DATE := $(shell date -u -v-14d +%Y-%m-%d 2>/dev/null || date -u -d '14 days ago' +%Y-%m-%d)
 
-default: install lint test
+.PHONY: default install lint lint-check test audit upgrade sync-frozen build clean
+
+default: install lint test audit
 
 install:
-	uv sync --all-extras
+	$(UV) sync --all-extras
 
 lint:
-	uv run python devtools/lint.py
+	$(UV) run python devtools/lint.py
 
 # Check-only lint, matching CI (does not modify files).
 lint-check:
-	uv run python devtools/lint.py --check
+	$(UV) run python devtools/lint.py --check
 
 test:
-	uv run pytest
+	$(UV) run pytest
+
+audit:
+	$(UV) run pip-audit
 
 upgrade:
-	uv sync --upgrade --all-extras --dev
+	$(UV) lock --upgrade --exclude-newer $(EXCLUDE_NEWER_DATE)
+	$(UV) sync --all-extras --dev
+
+sync-frozen:
+	$(UV) sync --frozen --all-extras
 
 build:
-	uv build
+	$(UV) build
 
 clean:
 	-rm -rf dist/

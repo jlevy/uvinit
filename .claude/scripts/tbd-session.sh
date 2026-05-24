@@ -3,6 +3,14 @@
 # Installed by: tbd setup --auto
 # This script runs on SessionStart and PreCompact
 
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+PROJECT_DIR=$(cd "$SCRIPT_DIR/../.." && pwd)
+TBD_VERSION=$(awk -F': *' '/^tbd_version:/ {print $2; exit}' "$PROJECT_DIR/.tbd/config.yml" 2>/dev/null)
+TBD_PACKAGE="get-tbd"
+if [ -n "$TBD_VERSION" ]; then
+    TBD_PACKAGE="get-tbd@${TBD_VERSION}"
+fi
+
 # Get npm global bin directory (if npm is available)
 NPM_GLOBAL_BIN=""
 if command -v npm &> /dev/null; then
@@ -27,26 +35,26 @@ ensure_tbd() {
 
     # Try npm first (most common for Node.js tools)
     if command -v npm &> /dev/null; then
-        echo "[tbd] Installing via npm..."
-        npm install -g get-tbd 2>/dev/null || {
+        echo "[tbd] Installing ${TBD_PACKAGE} via npm..."
+        npm install -g "$TBD_PACKAGE" 2>/dev/null || {
             # If global install fails (permissions), try local install
             echo "[tbd] Global npm install failed, trying user install..."
             mkdir -p ~/.local/bin
-            npm install --prefix ~/.local get-tbd
+            npm install --prefix ~/.local "$TBD_PACKAGE"
             # Create symlink if needed
             if [ -f ~/.local/node_modules/.bin/tbd ]; then
                 ln -sf ~/.local/node_modules/.bin/tbd ~/.local/bin/tbd
             fi
         }
     elif command -v pnpm &> /dev/null; then
-        echo "[tbd] Installing via pnpm..."
-        pnpm add -g get-tbd
+        echo "[tbd] Installing ${TBD_PACKAGE} via pnpm..."
+        pnpm add -g "$TBD_PACKAGE"
     elif command -v yarn &> /dev/null; then
-        echo "[tbd] Installing via yarn..."
-        yarn global add get-tbd
+        echo "[tbd] Installing ${TBD_PACKAGE} via yarn..."
+        yarn global add "$TBD_PACKAGE"
     else
         echo "[tbd] ERROR: No package manager found (npm, pnpm, or yarn required)"
-        echo "[tbd] Please install Node.js and npm, then run: npm install -g get-tbd"
+        echo "[tbd] Please install Node.js and npm, then run: npm install -g ${TBD_PACKAGE}"
         return 1
     fi
 

@@ -29,7 +29,7 @@ description: Full tbd workflow guide for agents
 ## Installation
 
 ```bash
-npm install -g get-tbd@latest
+npm install -g get-tbd@0.1.27
 tbd setup --auto --prefix=<name>   # Fresh project (--prefix is REQUIRED: 2-8 alphabetic chars recommended. ALWAYS ASK THE USER FOR THE PREFIX; do not guess it)
 tbd setup --auto                   # Existing tbd project (prefix already set)
 tbd setup --from-beads             # Migration from .beads/ if `bd` has been used

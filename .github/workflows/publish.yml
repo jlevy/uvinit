@@ -7,20 +7,21 @@ on:
 
 jobs:
   build-and-publish:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       id-token: write # Mandatory for OIDC.
       contents: read
     steps:
       - name: Checkout (official GitHub action)
-        uses: actions/checkout@v6
+        # Pinned to the v6 commit SHA; update with `git ls-remote` when bumping.
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           # Important for versioning plugins:
           fetch-depth: 0
 
       - name: Install uv (official Astral action)
-        # Pinned to a full, immutable version tag (see note in ci.yml).
-        uses: astral-sh/setup-uv@v8.1.0
+        # Pinned to the v8.1.0 commit SHA (see note in ci.yml).
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b
         with:
           version: "0.11.12"
           enable-cache: true
@@ -35,10 +36,13 @@ jobs:
         run: echo "UV_EXCLUDE_NEWER=$(date -u -d '14 days ago' +%Y-%m-%d)" >> "$GITHUB_ENV"
 
       - name: Install all dependencies
-        run: uv sync --all-extras
+        run: uv sync --frozen --all-extras
 
       - name: Run tests
         run: uv run pytest
+
+      - name: Audit dependencies
+        run: uv run pip-audit
 
       - name: Build package
         run: uv build
@@ -47,4 +51,4 @@ jobs:
         run: uv publish --trusted-publishing always
         # Although uv is newer and faster, the "official" publishing option is the one from PyPA,
         # which uses twine. If desired, replace `uv publish` with:
-        # uses: pypa/gh-action-pypi-publish@release/v1
+        # uses: pypa/gh-action-pypi-publish@<pinned commit SHA>

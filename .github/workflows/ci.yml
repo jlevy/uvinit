@@ -19,8 +19,8 @@ jobs:
     strategy:
       matrix:
         # Update this as needed:
-        # Common platforms: ["ubuntu-latest", "macos-latest", "windows-latest"]
-        os: ["ubuntu-latest"]
+        # Common platforms: ["ubuntu-24.04", "macos-15", "windows-2025"]
+        os: ["ubuntu-24.04"]
         python-version: ["3.11", "3.12", "3.13", "3.14"]
 
     # Linux only by default. Use ${{ matrix.os }} for other OSes.
@@ -31,16 +31,16 @@ jobs:
       # https://docs.astral.sh/uv/guides/integration/github/
 
       - name: Checkout (official GitHub action)
-        uses: actions/checkout@v6
+        # Pinned to the v6 commit SHA; update with `git ls-remote` when bumping.
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           # Important for versioning plugins:
           fetch-depth: 0
 
       - name: Install uv (official Astral action)
-        # Pinned to a full, immutable version tag. As of v8, setup-uv no longer
-        # publishes floating major/minor tags (e.g. `@v8`), so bump this exact
-        # version when updating.
-        uses: astral-sh/setup-uv@v8.1.0
+        # Pinned to the v8.1.0 commit SHA; bump both the action SHA and uv version
+        # intentionally when updating.
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b
         with:
           # Update this as needed:
           version: "0.11.12"
@@ -52,7 +52,7 @@ jobs:
 
       # Alternately can use the official Python action:
       # - name: Set up Python (using actions/setup-python)
-      #   uses: actions/setup-python@v5
+      #   uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
       #   with:
       #     python-version: ${{ matrix.python-version }}
 
@@ -63,7 +63,7 @@ jobs:
         run: echo "UV_EXCLUDE_NEWER=$(date -u -d '14 days ago' +%Y-%m-%d)" >> "$GITHUB_ENV"
 
       - name: Install all dependencies
-        run: uv sync --all-extras
+        run: uv sync --frozen --all-extras
 
       - name: Run linting
         # Check-only mode so CI fails on unformatted code instead of fixing it.
@@ -71,3 +71,6 @@ jobs:
 
       - name: Run tests
         run: uv run pytest
+
+      - name: Audit dependencies
+        run: uv run pip-audit

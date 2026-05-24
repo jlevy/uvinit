@@ -4,6 +4,8 @@
 
 set -e
 
+GH_VERSION="2.83.1"
+
 # Add common binary locations to PATH
 export PATH="$HOME/.local/bin:$HOME/bin:/usr/local/bin:$PATH"
 
@@ -21,35 +23,47 @@ else
 
     echo "[gh] Detected platform: ${OS}_${ARCH}"
 
-    # Get latest version from GitHub API (with fallback)
-    GH_VERSION=$(curl -fsSL https://api.github.com/repos/cli/cli/releases/latest 2>/dev/null \
-        | grep -o '"tag_name": *"v[^"]*"' | head -1 | sed 's/.*"v\([^"]*\)".*/\1/')
-
-    # Fallback version if API fails
-    GH_VERSION=${GH_VERSION:-2.83.1}
-
     echo "[gh] Version: ${GH_VERSION}"
 
     # Build download URL based on platform
     if [ "$OS" = "darwin" ]; then
-        DOWNLOAD_URL="https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_macOS_${ARCH}.zip"
+        ARCHIVE_NAME="gh_${GH_VERSION}_macOS_${ARCH}.zip"
         ARCHIVE_EXT="zip"
     else
-        DOWNLOAD_URL="https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_${OS}_${ARCH}.tar.gz"
+        ARCHIVE_NAME="gh_${GH_VERSION}_${OS}_${ARCH}.tar.gz"
         ARCHIVE_EXT="tar.gz"
     fi
+    DOWNLOAD_URL="https://github.com/cli/cli/releases/download/v${GH_VERSION}/${ARCHIVE_NAME}"
+    CHECKSUM_URL="https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_checksums.txt"
+    TMP_ARCHIVE="/tmp/${ARCHIVE_NAME}"
+    TMP_CHECKSUMS="/tmp/gh_${GH_VERSION}_checksums.txt"
 
     echo "[gh] Downloading from ${DOWNLOAD_URL}..."
 
-    # Download
-    curl -fsSL -o "/tmp/gh.${ARCHIVE_EXT}" "$DOWNLOAD_URL"
+    curl -fsSL -o "$TMP_ARCHIVE" "$DOWNLOAD_URL"
+    curl -fsSL -o "$TMP_CHECKSUMS" "$CHECKSUM_URL"
+
+    EXPECTED_SHA=$(awk -v file="$ARCHIVE_NAME" '$2 == file {print $1}' "$TMP_CHECKSUMS")
+    if [ -z "$EXPECTED_SHA" ]; then
+        echo "[gh] ERROR: No checksum found for ${ARCHIVE_NAME}"
+        exit 1
+    fi
+    if command -v sha256sum &> /dev/null; then
+        ACTUAL_SHA=$(sha256sum "$TMP_ARCHIVE" | awk '{print $1}')
+    else
+        ACTUAL_SHA=$(shasum -a 256 "$TMP_ARCHIVE" | awk '{print $1}')
+    fi
+    if [ "$EXPECTED_SHA" != "$ACTUAL_SHA" ]; then
+        echo "[gh] ERROR: Checksum mismatch for ${ARCHIVE_NAME}"
+        exit 1
+    fi
 
     # Extract based on archive type
     if [ "$ARCHIVE_EXT" = "zip" ]; then
-        unzip -q "/tmp/gh.zip" -d /tmp
+        unzip -q "$TMP_ARCHIVE" -d /tmp
         EXTRACT_DIR="/tmp/gh_${GH_VERSION}_macOS_${ARCH}"
     else
-        tar -xzf "/tmp/gh.tar.gz" -C /tmp
+        tar -xzf "$TMP_ARCHIVE" -C /tmp
         EXTRACT_DIR="/tmp/gh_${GH_VERSION}_${OS}_${ARCH}"
     fi
 
@@ -59,7 +73,7 @@ else
     chmod +x ~/.local/bin/gh
 
     # Clean up
-    rm -rf "${EXTRACT_DIR}" "/tmp/gh.${ARCHIVE_EXT}"
+    rm -rf "${EXTRACT_DIR}" "$TMP_ARCHIVE" "$TMP_CHECKSUMS"
 
     echo "[gh] Installed to ~/.local/bin/gh"
 fi

@@ -4,6 +4,7 @@ from typing import Any
 import copier
 import questionary
 import yaml
+from copier.errors import CopierAnswersInterrupt
 from prettyfmt.prettyfmt import fmt_path
 
 from uvtemplate.github_settings import get_github_defaults
@@ -131,7 +132,7 @@ def copy_template(
             answers_file=answers_file,
             defaults=auto_confirm,  # Use defaults for all unspecified values in auto mode
         )
-    except (KeyboardInterrupt, copier.CopierAnswersInterrupt):
+    except (KeyboardInterrupt, CopierAnswersInterrupt):
         raise Cancelled() from None
 
     print_success(message="Project template copied successfully.")

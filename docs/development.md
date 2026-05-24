@@ -22,7 +22,7 @@ The `Makefile` simply offers shortcuts to `uv` commands for developer convenienc
 # including dev dependencies and optional dependencies.
 make install
 
-# Run uv sync, lint, and test:
+# Run uv sync, lint, tests, and dependency audit:
 make
 
 # Build wheel:
@@ -37,10 +37,16 @@ make lint-check
 # Run tests:
 make test
 
+# Audit dependencies for known vulnerabilities:
+make audit
+
+# Verify the checked-in lockfile installs without re-resolving:
+make sync-frozen
+
 # Delete all the build artifacts:
 make clean
 
-# Upgrade dependencies to compatible versions:
+# Upgrade dependencies to compatible versions with the 14-day cool-off window:
 make upgrade
 
 # To run tests by hand:
@@ -56,12 +62,14 @@ uv tool install --editable .
 uv add package_name
 # Add a development dependency:
 uv add --dev package_name
-# Update to latest compatible versions (including dependencies on git repos):
-uv sync --upgrade
+# Update to latest compatible versions (including dependencies on git repos).
+# Use a cutoff date at least 14 days in the past.
+uv lock --upgrade --exclude-newer YYYY-MM-DD
+uv sync
 # Update a specific package:
 uv lock --upgrade-package package_name
-# Update dependencies on a package:
-uv add package_name@latest
+# Update a package deliberately after vetting the target release:
+uv add package_name==X.Y.Z
 
 # Run a shell within the Python environment:
 uv venv
@@ -96,8 +104,9 @@ cross-ecosystem guide on installing dependencies safely. Its key defaults:
   correctly (typosquats are common), and prefer a little first-party code over a new
   dependency.
 
-- **Pin, lock, and audit:** Commit your `uv.lock`, pin GitHub Actions to a commit SHA or
-  immutable tag, and run a vulnerability audit (e.g. `pip-audit`) after changes.
+- **Pin, lock, and audit:** Commit your `uv.lock`, pin GitHub Actions to a commit SHA,
+  install from the lockfile with `uv sync --frozen` in CI, and run `make audit` after
+  dependency changes.
 
 ## Publishing Releases
 
