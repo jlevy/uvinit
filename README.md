@@ -278,6 +278,14 @@ Note: The `update` command only works on projects that were created with uvtempl
 copier directly). If you migrated a project manually, use `uvtemplate migrate` to see
 recommendations.
 
+## Project Docs
+
+For how to install uv and Python, see [installation.md](docs/installation.md).
+
+For development workflows, see [development.md](docs/development.md).
+
+For instructions on publishing to PyPI, see [publishing.md](docs/publishing.md).
+
 * * *
 
 *This project was (of course) built using

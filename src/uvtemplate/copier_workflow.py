@@ -4,7 +4,7 @@ from typing import Any
 import copier
 import questionary
 import yaml
-from prettyfmt import fmt_path
+from prettyfmt.prettyfmt import fmt_path
 
 from uvtemplate.github_settings import get_github_defaults
 from uvtemplate.shell_utils import (

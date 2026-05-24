@@ -1,6 +1,6 @@
 from typing import Any
 
-from prettyfmt import fmt_path
+from prettyfmt.prettyfmt import fmt_path
 from rich.rule import Rule
 
 from uvtemplate.copier_workflow import copy_template, read_copier_answers

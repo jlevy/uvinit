@@ -51,12 +51,12 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "pytest>=8.3.5",
-    "pytest-sugar>=1.0.0",
-    "ruff>=0.11.9",
-    "codespell>=2.4.1",
-    "rich>=14.0.0",
-    "basedpyright>=1.29.1",
+    "pytest>=9.0.3",
+    "pytest-sugar>=1.1.1",
+    "ruff>=0.15.12",
+    "codespell>=2.4.2",
+    "rich>=15.0.0",
+    "basedpyright>=1.39.3",
     "funlog>=0.2.1",
 ]
 
@@ -113,9 +113,9 @@ select = [
     "B", # https://docs.astral.sh/ruff/rules/#flake8-bugbear-b
     "I", # https://docs.astral.sh/ruff/rules/#isort-i
     # Other possibilities:
-    # "D" # https://docs.astral.sh/ruff/rules/#pydocstyle-d
-    # "Q" # https://docs.astral.sh/ruff/rules/#flake8-quotes-q
-    # "COM" # https://docs.astral.sh/ruff/rules/#flake8-commas-com
+    # "D", # https://docs.astral.sh/ruff/rules/#pydocstyle-d
+    # "Q", # https://docs.astral.sh/ruff/rules/#flake8-quotes-q
+    # "COM", # https://docs.astral.sh/ruff/rules/#flake8-commas-com
     # "SIM", # https://docs.astral.sh/ruff/rules/#flake8-simplify-sim
 
 ]

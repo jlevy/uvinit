@@ -1,18 +1,22 @@
 # Makefile for easy development workflows.
-# See development.md for docs.
+# See docs/development.md for docs.
 # Note GitHub Actions call uv directly, not this Makefile.
 
 .DEFAULT_GOAL := default
 
-.PHONY: default install lint test upgrade build clean
+.PHONY: default install lint lint-check test upgrade build clean
 
-default: install lint test 
+default: install lint test
 
 install:
 	uv sync --all-extras
 
 lint:
 	uv run python devtools/lint.py
+
+# Check-only lint, matching CI (does not modify files).
+lint-check:
+	uv run python devtools/lint.py --check
 
 test:
 	uv run pytest
