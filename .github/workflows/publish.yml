@@ -39,10 +39,10 @@ jobs:
         run: uv sync --frozen --all-extras
 
       - name: Run tests
-        run: uv run pytest
+        run: uv run --frozen pytest
 
       - name: Audit dependencies
-        run: uv run pip-audit
+        run: uv run --frozen pip-audit
 
       - name: Build package
         run: uv build

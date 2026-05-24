@@ -5,6 +5,7 @@
 .DEFAULT_GOAL := default
 
 UV ?= UV_NO_CONFIG=1 uv
+UV_RUN ?= $(UV) run --frozen
 EXCLUDE_NEWER_DATE := $(shell date -u -v-14d +%Y-%m-%d 2>/dev/null || date -u -d '14 days ago' +%Y-%m-%d)
 
 .PHONY: default install lint lint-check test audit upgrade sync-frozen build clean
@@ -15,17 +16,17 @@ install:
 	$(UV) sync --all-extras
 
 lint:
-	$(UV) run python devtools/lint.py
+	$(UV_RUN) python devtools/lint.py
 
 # Check-only lint, matching CI (does not modify files).
 lint-check:
-	$(UV) run python devtools/lint.py --check
+	$(UV_RUN) python devtools/lint.py --check
 
 test:
-	$(UV) run pytest
+	$(UV_RUN) pytest
 
 audit:
-	$(UV) run pip-audit
+	$(UV_RUN) pip-audit
 
 upgrade:
 	$(UV) lock --upgrade --exclude-newer $(EXCLUDE_NEWER_DATE)

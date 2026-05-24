@@ -67,10 +67,10 @@ jobs:
 
       - name: Run linting
         # Check-only mode so CI fails on unformatted code instead of fixing it.
-        run: uv run python devtools/lint.py --check
+        run: uv run --frozen python devtools/lint.py --check
 
       - name: Run tests
-        run: uv run pytest
+        run: uv run --frozen pytest
 
       - name: Audit dependencies
-        run: uv run pip-audit
+        run: uv run --frozen pip-audit
